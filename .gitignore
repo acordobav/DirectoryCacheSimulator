@@ -1,0 +1,10 @@
+
+.idea/
+
+testcomputer/__pycache__/
+
+computer/cache/__pycache__/
+
+computer/control/__pycache__/
+
+computer/cpu/__pycache__/
