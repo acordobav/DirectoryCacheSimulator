@@ -45,7 +45,6 @@ class TestL1Methods(unittest.TestCase):
         # Escribir en un bloque shared
         r1 = cache.write(10, 50, CoherenceState.shared)
         self.assertEqual(r1[0], CacheAlert.wrHit)
-        self.assertEqual(r1[1], CoherenceState.shared)
 
         # Escribir en un bloque que no se tiene
         r2 = cache.write(30, 120, CoherenceState.shared)
@@ -54,7 +53,6 @@ class TestL1Methods(unittest.TestCase):
         # Escribir en un bloque modified
         r3 = cache.write(22, 500, CoherenceState.modified)
         self.assertEqual(r3[0], CacheAlert.wrHit)
-        self.assertEqual(r3[1], CoherenceState.modified)
 
     def test_replace(self):
         """

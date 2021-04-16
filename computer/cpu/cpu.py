@@ -14,13 +14,13 @@ class CPU:
 
     def generateInstr(self):
         val = randrange(10)
-        if val < 3: # instruccion cacl
+        if val < 3:  # instruccion cacl
             return [InstrType.calc]
 
-        if 3 <= val < 6: # instruccion read
+        if 3 <= val < 6:  # instruccion read
             return [InstrType.read, self.generateMemDir()]
 
-        if 6 <= val: # instruccion write
+        if 6 <= val:  # instruccion write
             return [InstrType.write, self.generateMemDir(), randrange(2**16)]
 
     def addInstr(self):

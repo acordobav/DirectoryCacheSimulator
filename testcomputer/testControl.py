@@ -119,3 +119,55 @@ class TestControlMethods(unittest.TestCase):
         | 1 | 0  | 0  | I
         | 2 | 0  | 0  | I
         """
+
+    def test_writeInstr(self):
+        control = self.getControl()
+        inQueue = control.inQueue
+        outQueue = control.outQueue
+
+        control.cache.blockState = [CoherenceState.invalid,
+                                    CoherenceState.shared,
+                                    CoherenceState.modified]
+
+        control.cache.blockDirMem = [1, 2, 3]
+
+        control.cache.blockData = [14856,
+                                   684,
+                                   8640]
+        """
+        | Num | Dir | Data | State
+        | 0 | 1 | 14856 | I
+        | 1 | 2 | 684   | S
+        | 2 | 3 | 8640  | M
+        """
+        inQueue.put(None)
+        control.writeInstr(1, 50)
+
+        # Notificacion wrMiss
+        r = outQueue.get()
+        self.assertEqual(r[0], CacheAlert.wrMiss)
+        self.assertEqual(r[1], 1)
+
+        # Notificacion replacement
+        r = outQueue.get()
+        self.assertEqual(r[0], ReplaceAction.invalid_replace)
+        self.assertEqual(r[1], 1)
+        self.assertEqual(control.cache.blockState[0], CoherenceState.modified)
+
+        """
+        | Num | Dir | Data | State
+        | 0 | 1 | 50    | I
+        | 1 | 2 | 684   | S
+        | 2 | 3 | 8640  | M
+        """
+        inQueue.put(None)
+        control.writeInstr(2, 700)
+
+        # Notificacion wrHit
+        r = outQueue.get()
+        self.assertEqual(r[0], CacheAlert.wrHit)
+        self.assertEqual(r[1], 2)
+        r = outQueue.get()
+        self.assertIsNone(r)
+
+        self.assertEqual(control.cache.blockState[1], CoherenceState.modified)

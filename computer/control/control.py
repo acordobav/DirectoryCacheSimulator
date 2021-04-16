@@ -16,14 +16,37 @@ class Control:
         instr = self.cpu.popInstr()
 
         if instr[0] == InstrType.read:
-            result = self.readInstr(instr[1])
+            self.readInstr(instr[1])
+
+        elif instr[0] == InstrType.write:
+            self.writeInstr(instr[1], instr[2])
+
+    def writeInstr(self, memDir, data):
+        result = self.cache.write(
+            memDir,
+            data,
+            CoherenceState.modified)
+
+        # Si la escritura fue un hit no se realiza ninguna accion
+        if result[0] == CacheAlert.wrHit:
+            self.outQueue.put([CacheAlert.wrHit, memDir])
+            self.outQueue.put(None)
+
+        # Se notifica al directorio que ocurrio un wrMiss
+        self.outQueue.put([CacheAlert.wrMiss, memDir])
+        self.inQueue.get()
+
+        # Se escribe el valor en cache
+        self.replaceCacheBlock(memDir, data, CoherenceState.modified)
 
     def readInstr(self, memDir):
         result = self.cache.read(memDir)
 
-        # Si la lectura fue un hit se retorna el valor
+        # Si la lectura fue un hit no se realiza ninguna accion
         if result[0] == CacheAlert.rdHit:
-            return result[1]
+            self.outQueue.put(None)
+            self.outQueue.put(None)
+            return
 
         # Se espera para obtener el valor de la cache L2
         self.outQueue.put([CacheAlert.rdMiss, memDir])

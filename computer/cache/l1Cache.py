@@ -49,14 +49,15 @@ class L1:
         # Obtiene el index del elemento
         index = self.blockDirMem.index(dirMem)
 
-        # Se obtiene el estado del bloque antes de escribir
-        originalState = self.blockState[index]
+        # Se verifica si el bloque es invalido
+        if self.blockState[index] == CoherenceState.invalid:
+            return [CacheAlert.wrMiss]
 
         # Se actualiza el valor de data y estado en el index
         self.blockData[index] = data
         self.blockState[index] = state
 
-        return [CacheAlert.wrHit, originalState]
+        return [CacheAlert.wrHit]
 
     def replace(self, memDir, data, state, index):
         self.blockState[index] = state
