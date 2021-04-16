@@ -1,5 +1,5 @@
 from random import randrange
-from computer.cpu.instr import InstrType
+from computer.node.cpu.instr import InstrType
 
 
 class CPU:

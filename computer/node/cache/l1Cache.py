@@ -1,5 +1,5 @@
 from enum import Enum
-from computer.cache.cachealert import CacheAlert
+from computer.node.cache.cachealert import CacheAlert
 
 
 class CoherenceState(Enum):

@@ -1,5 +1,9 @@
 import unittest
-from computer.control.control import *
+from queue import Queue
+from computer.node.cpu.cpu import CPU
+from computer.node.cache.l1Cache import L1, CacheAlert, CoherenceState
+from computer.node.control.control import Control, ReplaceAction
+
 
 class TestControlMethods(unittest.TestCase):
     def getControl(self):
@@ -194,3 +198,12 @@ class TestControlMethods(unittest.TestCase):
         i = control.cache.blockDirMem.index(3)
         self.assertEqual(control.cache.blockState[1], CoherenceState.modified)
 
+    def test_execute(self):
+        control = self.getControl()
+        inQueue = control.inQueue
+
+        for i in range(0, 5):
+            inQueue.put(10)
+
+        for i in range(0, 4):
+            control.execute()

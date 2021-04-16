@@ -1,7 +1,7 @@
 import unittest
 
-from computer.cache.l1Cache import CoherenceState, L1
-from computer.cache.cachealert import CacheAlert
+from computer.node.cache.l1Cache import CoherenceState, L1
+from computer.node.cache.cachealert import CacheAlert
 
 
 class TestL1Methods(unittest.TestCase):

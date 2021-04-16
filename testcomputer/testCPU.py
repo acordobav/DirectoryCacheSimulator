@@ -1,6 +1,6 @@
 import unittest
 
-from computer.cpu.cpu import CPU, InstrType
+from computer.node.cpu.cpu import CPU, InstrType
 
 
 class TestCPUMethods(unittest.TestCase):

@@ -1,8 +1,7 @@
-from queue import Queue
-from computer.cpu.cpu import CPU
-from computer.cpu.instr import InstrType
-from computer.cache.l1Cache import L1, CacheAlert, CoherenceState
-from computer.control.replace import ReplaceAction
+from computer.node.cpu.instr import InstrType
+from computer.node.cache.l1Cache import CacheAlert, CoherenceState
+from computer.node.control.replaceAction import ReplaceAction
+
 
 class Control:
     instr = [""]
@@ -14,6 +13,7 @@ class Control:
         self.outQueue = outQueue;
 
     def execute(self):
+        # Se obtiene una instruccion de la cola
         self.instr = self.cpu.popInstr()
         instr = self.instr
 
@@ -22,6 +22,16 @@ class Control:
 
         elif instr[0] == InstrType.write:
             self.writeInstr(instr[1], instr[2])
+
+        else:
+            self.calcInstr()
+
+        # Se genera una nueva instruccion
+        self.cpu.addInstr()
+
+    def calcInstr(self):
+        self.outQueue.put(None)
+        self.outQueue.put(None)
 
     def writeInstr(self, memDir, data):
         result = self.cache.write(

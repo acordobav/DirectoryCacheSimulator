@@ -3,8 +3,8 @@
 
 testcomputer/__pycache__/
 
-computer/cache/__pycache__/
+computer/node/cache/__pycache__/
 
-computer/control/__pycache__/
+computer/node/control/__pycache__/
 
-computer/cpu/__pycache__/
+computer/node/cpu/__pycache__/
