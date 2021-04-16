@@ -6,7 +6,7 @@ class CPU:
     instr = []
 
     def __init__(self):
-        for i in range(0, 5):
+        for i in range(0, 3):
             self.addInstr()
 
     def generateMemDir(self):
