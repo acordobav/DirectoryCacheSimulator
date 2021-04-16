@@ -5,6 +5,7 @@ from computer.cache.l1Cache import L1, CacheAlert, CoherenceState
 from computer.control.replace import ReplaceAction
 
 class Control:
+    instr = [""]
 
     def __init__(self, cpu, cache, inQueue, outQueue):
         self.cpu = cpu
@@ -13,7 +14,8 @@ class Control:
         self.outQueue = outQueue;
 
     def execute(self):
-        instr = self.cpu.popInstr()
+        self.instr = self.cpu.popInstr()
+        instr = self.instr
 
         if instr[0] == InstrType.read:
             self.readInstr(instr[1])
@@ -31,6 +33,7 @@ class Control:
         if result[0] == CacheAlert.wrHit:
             self.outQueue.put([CacheAlert.wrHit, memDir])
             self.outQueue.put(None)
+            return
 
         # Se notifica al directorio que ocurrio un wrMiss
         self.outQueue.put([CacheAlert.wrMiss, memDir])

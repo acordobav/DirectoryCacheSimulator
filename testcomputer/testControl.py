@@ -152,11 +152,13 @@ class TestControlMethods(unittest.TestCase):
         r = outQueue.get()
         self.assertEqual(r[0], ReplaceAction.invalid_replace)
         self.assertEqual(r[1], 1)
-        self.assertEqual(control.cache.blockState[0], CoherenceState.modified)
+
+        i = control.cache.blockDirMem.index(1)
+        self.assertEqual(control.cache.blockState[i], CoherenceState.modified)
 
         """
         | Num | Dir | Data | State
-        | 0 | 1 | 50    | I
+        | 0 | 1 | 50    | M
         | 1 | 2 | 684   | S
         | 2 | 3 | 8640  | M
         """
@@ -170,4 +172,25 @@ class TestControlMethods(unittest.TestCase):
         r = outQueue.get()
         self.assertIsNone(r)
 
+        i = control.cache.blockDirMem.index(2)
+        self.assertEqual(control.cache.blockState[i], CoherenceState.modified)
+
+        """
+        | Num | Dir | Data | State
+        | 0 | 1 | 50    | M
+        | 1 | 2 | 700   | M
+        | 2 | 3 | 8640  | M
+        """
+        inQueue.put(None)
+        control.writeInstr(3, 800)
+
+        # Notificacion wrHit
+        r = outQueue.get()
+        self.assertEqual(r[0], CacheAlert.wrHit)
+        self.assertEqual(r[1], 3)
+        r = outQueue.get()
+        self.assertIsNone(r)
+
+        i = control.cache.blockDirMem.index(3)
         self.assertEqual(control.cache.blockState[1], CoherenceState.modified)
+
