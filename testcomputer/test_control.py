@@ -1,7 +1,7 @@
 import unittest
 from queue import Queue
 from computer.node.cpu.cpu import CPU
-from computer.node.cache.l1Cache import L1, CacheAlert, CoherenceState
+from computer.node.cache.cache_L1 import L1, CacheAlert, CoherenceState
 from computer.node.control.control import Control, ReplaceAction
 
 
@@ -9,14 +9,16 @@ class TestControlMethods(unittest.TestCase):
     def getControl(self):
         inQueue = Queue()
         outQueue = Queue()
+        invalidate = Queue()
+        notify = Queue()
         cpu = CPU()
         cache = L1(3)
 
-        return Control(cpu, cache, inQueue, outQueue)
+        return Control(cpu, cache, inQueue, outQueue, invalidate, notify)
 
     def test_replaceCacheBlock(self):
         control = self.getControl()
-        outQueue = control.outQueue
+        notify = control.notify
 
         """
         | Num | Dir | Data | State
@@ -25,7 +27,7 @@ class TestControlMethods(unittest.TestCase):
         | 2 | 0 | 0 | I
         """
         control.replaceCacheBlock(10, 50, CoherenceState.modified);
-        r1 = outQueue.get()
+        r1 = notify.get()
         self.assertEqual(r1[0], ReplaceAction.invalid_replace)
         self.assertEqual(r1[1], 0)
 
@@ -36,7 +38,7 @@ class TestControlMethods(unittest.TestCase):
         | 2 | 0 | 0 | I
         """
         control.replaceCacheBlock(74, 120, CoherenceState.shared)
-        r2 = outQueue.get()
+        r2 = notify.get()
         self.assertEqual(r2[0], ReplaceAction.invalid_replace)
         self.assertEqual(r2[1], 0)
 
@@ -47,7 +49,7 @@ class TestControlMethods(unittest.TestCase):
         | 2 | 0 | 0 | I
         """
         control.replaceCacheBlock(80, 45, CoherenceState.shared)
-        r3 = outQueue.get()
+        r3 = notify.get()
         self.assertEqual(r3[0], ReplaceAction.invalid_replace)
         self.assertEqual(r3[1], 0)
 
@@ -58,7 +60,7 @@ class TestControlMethods(unittest.TestCase):
         | 2 | 80 | 45 | S
         """
         control.replaceCacheBlock(95, 47, CoherenceState.modified)
-        r3 = outQueue.get()
+        r3 = notify.get()
         self.assertEqual(r3[0], ReplaceAction.share_replaced)
         self.assertEqual(r3[1], 74)
 
@@ -69,7 +71,7 @@ class TestControlMethods(unittest.TestCase):
         | 2 | 80 | 45 | S
         """
         control.replaceCacheBlock(57, 47, CoherenceState.modified)
-        r3 = outQueue.get()
+        r3 = notify.get()
         self.assertEqual(r3[0], ReplaceAction.share_replaced)
         self.assertEqual(r3[1], 80)
 
@@ -80,7 +82,7 @@ class TestControlMethods(unittest.TestCase):
         | 2 | 57 | 47 | M
         """
         control.replaceCacheBlock(1, 20, CoherenceState.shared)
-        r3 = outQueue.get()
+        r3 = notify.get()
         self.assertEqual(r3[0], ReplaceAction.modified_replaced)
         self.assertEqual(r3[1], 10)
 
@@ -95,6 +97,7 @@ class TestControlMethods(unittest.TestCase):
         control = self.getControl()
         inQueue = control.inQueue
         outQueue = control.outQueue
+        notify = control.notify
 
         inQueue.put(50)
 
@@ -112,8 +115,10 @@ class TestControlMethods(unittest.TestCase):
         self.assertEqual(r[0], CacheAlert.rdMiss)
         self.assertEqual(r[1], memDir)
 
+        control.execute()
+
         # Debe notificar que cambio un bloque en la cache
-        r = outQueue.get()
+        r = notify.get()
         self.assertEqual(r[0], ReplaceAction.invalid_replace)
         self.assertEqual(r[1], 0)
 
@@ -128,6 +133,7 @@ class TestControlMethods(unittest.TestCase):
         control = self.getControl()
         inQueue = control.inQueue
         outQueue = control.outQueue
+        notify = control.notify
 
         control.cache.blockState = [CoherenceState.invalid,
                                     CoherenceState.shared,
@@ -153,7 +159,7 @@ class TestControlMethods(unittest.TestCase):
         self.assertEqual(r[1], 1)
 
         # Notificacion replacement
-        r = outQueue.get()
+        r = notify.get()
         self.assertEqual(r[0], ReplaceAction.invalid_replace)
         self.assertEqual(r[1], 1)
 
@@ -173,8 +179,6 @@ class TestControlMethods(unittest.TestCase):
         r = outQueue.get()
         self.assertEqual(r[0], CacheAlert.wrHit)
         self.assertEqual(r[1], 2)
-        r = outQueue.get()
-        self.assertIsNone(r)
 
         i = control.cache.blockDirMem.index(2)
         self.assertEqual(control.cache.blockState[i], CoherenceState.modified)
@@ -192,18 +196,16 @@ class TestControlMethods(unittest.TestCase):
         r = outQueue.get()
         self.assertEqual(r[0], CacheAlert.wrHit)
         self.assertEqual(r[1], 3)
-        r = outQueue.get()
-        self.assertIsNone(r)
 
         i = control.cache.blockDirMem.index(3)
-        self.assertEqual(control.cache.blockState[1], CoherenceState.modified)
+        self.assertEqual(control.cache.blockState[i], CoherenceState.modified)
 
-    def test_execute(self):
-        control = self.getControl()
-        inQueue = control.inQueue
-
-        for i in range(0, 5):
-            inQueue.put(10)
-
-        for i in range(0, 4):
-            control.execute()
+    # def test_execute(self):
+    #     control = self.getControl()
+    #     inQueue = control.inQueue
+    #
+    #     for i in range(0, 5):
+    #         inQueue.put(10)
+    #
+    #     for i in range(0, 4):
+    #         control.execute()

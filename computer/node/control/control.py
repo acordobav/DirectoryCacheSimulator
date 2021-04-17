@@ -1,21 +1,44 @@
 from computer.node.cpu.instr import InstrType
-from computer.node.cache.l1Cache import CacheAlert, CoherenceState
-from computer.node.control.replaceAction import ReplaceAction
+from computer.node.cache.cache_L1 import CacheAlert, CoherenceState
+from computer.node.control.replace_action import ReplaceAction
 
 
 class Control:
-    instr = [""]
+    alert = []
 
-    def __init__(self, cpu, cache, inQueue, outQueue):
+    def __init__(self, cpu, cache, inQueue, outQueue, invalidate, notify):
         self.cpu = cpu
         self.cache = cache
-        self.inQueue = inQueue;
-        self.outQueue = outQueue;
+        self.inQueue = inQueue
+        self.outQueue = outQueue
+        self.invalidate = invalidate
+        self.notify = notify
+        self.waiting = False
 
     def execute(self):
+        if not self.waiting:
+            # Si el procesador no esta esperando el resultado
+            # de una solicitud a L2 se ejecuta una instruccion
+            self.execInstr()
+
+        else:
+            # Se verifica si la respuesta ya fue generada
+            if not self.inQueue.empty():
+                # Se procesa la respuesta
+                self.execRequestResponse()
+
+    def execRequestResponse(self):
+        # Se procesa la respuesta
+        result = self.inQueue.get()
+
+        if self.alert[0] == CacheAlert.rdMiss:
+            # Se escribe el valor en cache
+            memDir = self.alert[1]
+            self.replaceCacheBlock(memDir, result, CoherenceState.shared)
+
+    def execInstr(self):
         # Se obtiene una instruccion de la cola
-        self.instr = self.cpu.popInstr()
-        instr = self.instr
+        instr = self.cpu.popInstr()
 
         if instr[0] == InstrType.read:
             self.readInstr(instr[1])
@@ -27,11 +50,12 @@ class Control:
             self.calcInstr()
 
         # Se genera una nueva instruccion
-        self.cpu.addInstr()
+        # self.cpu.addInstr()
 
     def calcInstr(self):
-        self.outQueue.put(None)
-        self.outQueue.put(None)
+        # self.outQueue.put(None)
+        # self.outQueue.put(None)
+        pass
 
     def writeInstr(self, memDir, data):
         result = self.cache.write(
@@ -41,13 +65,15 @@ class Control:
 
         # Si la escritura fue un hit no se realiza ninguna accion
         if result[0] == CacheAlert.wrHit:
-            self.outQueue.put([CacheAlert.wrHit, memDir])
-            self.outQueue.put(None)
+            self.alert = [CacheAlert.wrHit, memDir, data]
+            self.outQueue.put(self.alert)
+            # self.outQueue.put(None)
             return
 
         # Se notifica al directorio que ocurrio un wrMiss
-        self.outQueue.put([CacheAlert.wrMiss, memDir])
-        self.inQueue.get()
+        self.alert = [CacheAlert.wrMiss, memDir, data]
+        self.outQueue.put(self.alert)
+        # self.inQueue.get()
 
         # Se escribe el valor en cache
         self.replaceCacheBlock(memDir, data, CoherenceState.modified)
@@ -57,16 +83,15 @@ class Control:
 
         # Si la lectura fue un hit no se realiza ninguna accion
         if result[0] == CacheAlert.rdHit:
-            self.outQueue.put(None)
-            self.outQueue.put(None)
+            # self.outQueue.put(None)
+            # self.outQueue.put(None)
             return
 
         # Se espera para obtener el valor de la cache L2
-        self.outQueue.put([CacheAlert.rdMiss, memDir])
-        data = self.inQueue.get()
+        self.alert = [CacheAlert.rdMiss, memDir]
+        self.outQueue.put(self.alert)
 
-        # Se escribe el valor en cache
-        self.replaceCacheBlock(memDir, data, CoherenceState.shared)
+        self.waiting = True
 
     def replaceCacheBlock(self, memDir, data, newState):
         # Se intenta reemplazar un bloque invalido
@@ -102,7 +127,7 @@ class Control:
 
         # Se notifica al directorio que el bloque se libera
         oldMemDir = self.cache.blockDirMem[index]
-        self.outQueue.put([replaceAction, oldMemDir])
+        self.notify.put([replaceAction, oldMemDir])
 
         # Se reemplaza el bloque
         self.cache.replace(memDir, data, newState, index)
