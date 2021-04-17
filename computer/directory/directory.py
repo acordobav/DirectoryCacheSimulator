@@ -42,3 +42,27 @@ class Directory:
         # Se agrega la nueva referencia
         self.processorRef[index][node_id] = 1
         return [CacheAlert.rdHit, self.cache.read(mem_dir)]
+
+    def write(self, node_id, mem_dir, data, update_buses):
+        # Verifica si la direccion se encuentra en cache
+        if mem_dir not in self.cache.blockDirMem:
+            return [CacheAlert.wrMiss]
+
+        # Obtiene el index del elemento
+        index = self.cache.blockDirMem.index(mem_dir)
+
+        # Notifica a las cache que deben invalidar el bloque
+        for i in range(0, self.num_processors):
+            if self.processorRef[index][i] == 1 and i != node_id:
+                # Notificacion
+                update_buses[i].put([mem_dir, CoherenceState.invalid])
+                # Eliminacion de la referencia en el directorio
+                self.processorRef[index][i] = 0
+
+        # Se escribe el valor en cache
+        self.cache.write(mem_dir, data, index)
+        # Se actualiza la referencia y el estado en el directorio
+        self.blockState[index] = DirectoryState.exclusive
+        self.processorRef[index][node_id] = 1
+
+        return [CacheAlert.wrHit]

@@ -74,3 +74,48 @@ class TestDirectoryMethods(unittest.TestCase):
         update = update_bus.get()
         self.assertEqual(update[0], 30)
         self.assertEqual(update[1], CoherenceState.shared)
+
+    def test_write(self):
+        directory = get_directory()
+        update_buses = get_update_buses()
+
+        # Escritura en un bloque invalido
+        r = directory.write(1, 10, 22, update_buses)
+        self.assertEqual(r[0], CacheAlert.wrHit)
+        self.assertEqual(directory.processorRef[0], [0, 1, 0])
+        self.assertEqual(directory.blockState[0], DirectoryState.exclusive)
+        for i in range(0, len(update_buses)):
+            self.assertTrue(update_buses[i].empty())
+
+        """
+        | N | Dir | Data | Sta | P   |
+        | 0 |  10 |  22  | DM  | 010 |
+        | 1 |  20 |  21  | DS  | 011 |
+        | 2 |  30 |  31  | DM  | 100 |
+        """
+        # Escritura en un bloque modificado por parte del mismo procesador
+        r = directory.write(1, 10, 50, update_buses)
+        self.assertEqual(r[0], CacheAlert.wrHit)
+        self.assertEqual(directory.processorRef[0], [0, 1, 0])
+        self.assertEqual(directory.blockState[0], DirectoryState.exclusive)
+        for i in range(0, len(update_buses)):
+            self.assertTrue(update_buses[i].empty())
+
+        """
+        | N | Dir | Data | Sta | P   |
+        | 0 |  10 |  50  | DM  | 010 |
+        | 1 |  20 |  21  | DS  | 011 |
+        | 2 |  30 |  31  | DM  | 100 |
+        """
+        # Escritura en unbloque modificado por otro procesador
+        r = directory.write(1, 30, 70, update_buses)
+        self.assertEqual(r[0], CacheAlert.wrHit)
+        self.assertEqual(directory.processorRef[2], [0, 1, 0])
+        self.assertEqual(directory.blockState[0], DirectoryState.exclusive)
+        for i in range(0, len(update_buses)):
+            if i == 0:
+                message = update_buses[0].get()
+                self.assertTrue(message[0], 30)
+                self.assertTrue(message[0], CoherenceState.shared)
+            else:
+                self.assertTrue(update_buses[i].empty())
