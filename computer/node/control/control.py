@@ -6,12 +6,12 @@ from computer.node.control.replace_action import ReplaceAction
 class Control:
     alert = []
 
-    def __init__(self, cpu, cache, inQueue, outQueue, invalidate, notify):
+    def __init__(self, cpu, cache, inQueue, outQueue, update, notify):
         self.cpu = cpu
         self.cache = cache
         self.inQueue = inQueue
         self.outQueue = outQueue
-        self.invalidate = invalidate
+        self.update = update
         self.notify = notify
         self.waiting = False
 

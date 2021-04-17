@@ -10,3 +10,5 @@ computer/node/control/__pycache__/
 computer/node/cpu/__pycache__/
 
 interface/__pycache__/
+
+computer/directory/__pycache__/

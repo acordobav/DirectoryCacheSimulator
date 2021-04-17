@@ -1,11 +1,5 @@
-from enum import Enum
+from computer.node.cache.coherence_state import CoherenceState
 from computer.node.cache.cache_alert import CacheAlert
-
-
-class CoherenceState(Enum):
-    modified = "M"
-    shared = "S"
-    invalid = "I"
 
 
 class L1:
