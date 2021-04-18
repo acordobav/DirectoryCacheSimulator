@@ -7,7 +7,7 @@ from computer.node.cache.cache_alert import CacheAlert
 class DirectoryControl:
     waiting = False
 
-    def __init__(self, p_buses, mem_bus, update_buses):
+    def __init__(self, p_buses, mem_bus, update_buses, num_processors, replace_bus):
         """
         Constructor
         :param p_buses: lista con los buses para comunicarse con los procesadores,
@@ -23,19 +23,20 @@ class DirectoryControl:
         # Bus para acceder a memoria
         self.mem_bus = mem_bus
 
+        self.replace_bus = replace_bus
         self.update_buses = update_buses
-
+        self.num_processors = num_processors
         self.associativity = 2
         self.num_blocks = 4
         self.num_sets = self.num_blocks / self.associativity
 
-        self.directory = Directory(self.num_blocks, len(update_buses),
+        self.directory = Directory(self.num_blocks, num_processors,
                                    update_buses, mem_bus)
         self.cache = self.directory.cache
 
         # Lista para manejar las solicitudes que esperan un resultado
         # de una solicitud a memoria principal
-        self.pending_requests = [None] * len(p_buses)
+        self.pending_requests = [None] * num_processors
 
     def read_memory(self, mem_dir):
         # Se solicita la informacion a memoria principa;
@@ -78,6 +79,14 @@ class DirectoryControl:
         return index
 
     def replaceBlock(self, mem_dir, data, newState, node_id):
+        """
+        Funcion para reemplazar un bloque de cache, se reemplaza
+        el que tenga menos referencias
+        :param mem_dir: direccion de memoria del bloque que se inserta
+        :param data: informacion del bloque que se inserta
+        :param newState: nuevo estado del bloque que se inserta
+        :param node_id: nodo que levanto la alerta
+        """
         # Se obtiene el index del set en el que debe estar el bloque
         index_set = int(mem_dir % self.num_sets)
 
@@ -91,6 +100,12 @@ class DirectoryControl:
         self.directory.write(node_id, mem_dir, data, index, newState)
 
     def handle_read(self, mem_dir, node_id, requested):
+        """
+        Funcion para manejar una alerta de lectura
+        :param mem_dir: direccion de memoria que se lee
+        :param node_id: nodo que realiza la solicitud
+        :param requested: indica si la solicitud fue solicitada anteriormente
+        """
         is_data_available = self.directory.check_mem_dir(mem_dir)
 
         # Se verifica que el dato se encuentre en memoria
@@ -111,6 +126,12 @@ class DirectoryControl:
         bus.put(data)
 
     def handle_write(self, mem_dir, data, node_id):
+        """
+        Funcion para manejar una alerta de escritura
+        :param mem_dir: direccion de memoria en donde se escribe
+        :param data: informacion que se debe escribir
+        :param node_id: nodo que realiza la solicitud
+        """
         is_data_in_cache = self.directory.check_mem_dir(mem_dir)
 
         # Si dato no se encuentra en cache, se reemplaza un bloque
@@ -121,3 +142,87 @@ class DirectoryControl:
         index = self.directory.cache.blockDirMem.index(mem_dir)
         self.directory.write(node_id, mem_dir, data,
                              index, DirectoryState.exclusive)
+
+    def handle_memory_response(self):
+        """
+        Funcion para atender las respuestas generadas por una
+        solicitud enviada a memoria principal
+        """
+        # Se verifica si el bus esta vacio
+        while not self.mem_bus.empty():
+            # Se obtienen los datos enviados en la respuesta
+            response = self.mem_bus.get()
+            mem_dir = response[0]
+            data = response[1]
+
+            # Se obtiene el id del nodo que realizo la solicitud
+            index = self.pending_requests.index([CacheAlert.rdMiss, mem_dir])
+
+            # Se almacenan en la cache
+            self.replaceBlock(mem_dir, data, DirectoryState.shared, index)
+
+    def remove_reference(self, mem_dir, node_id):
+        """
+        Funcion para eliminar una referencia a un bloque del directorio
+        :param mem_dir: direccion de memoria del bloque
+        :param node_id: nodo que realiza la alerta
+        :return:
+        """
+        if mem_dir not in self.directory.cache.blockDirMem:
+            return
+
+        # Se obtiene el index de la lista de referencias del bloque
+        index = self.directory.cache.blockDirMem.index(mem_dir)
+
+        # Se elimina la referencia
+        self.directory.processorRef[index][node_id] = 0
+
+        # Se verifica si las referencias totales son cero
+        if sum(self.directory.processorRef[index]) == 0:
+            # Se verifica si es necesario realizar un write back
+            if self.directory.blockState[index] == DirectoryState.exclusive:
+                self.write_memory(self.directory.cache.blockDirMem[index],
+                                  self.directory.cache.blockData[index])
+
+            # Se cambia el estado del bloque
+            self.directory.blockState[index] = DirectoryState.uncached
+
+    def handle_replace_alerts(self):
+        """
+        Funcion para atender todas las solicitud de reemplazo
+        en las cache L1
+        """
+        for i in range(0, self.num_processors):
+            bus = self.replace_bus[i]
+            while not bus.empty():
+                replace_action = bus.get()
+                self.remove_reference(replace_action[1], i)
+
+    def execute(self):
+        # Se atienden alertas de reemplazo de datos en L1
+        self.handle_replace_alerts()
+
+        # Se atienden las respuestas enviadas por memoria principal
+        self.handle_memory_response()
+
+        # Se atienden alertas de datos
+        for i in range(0, self.num_processors):
+            request = self.pending_requests[i]
+            if request is not None:
+                # Se atiende la solicitud de lectura
+                if request[0] == CacheAlert.rdMiss:
+                    mem_dir = request[1]
+                    self.handle_read(mem_dir, i, True)
+
+            else:
+                if not self.p_buses[i][0].empty():
+                    request = self.p_buses[i][0].get()
+                    request_type = request[0]
+                    mem_dir = request[1]
+                    if request_type == CacheAlert.rdMiss:
+                        self.handle_read(mem_dir, i, False)
+
+                    if request_type == CacheAlert.wrHit or CacheAlert.wrMiss:
+                        data = request[2]
+                        self.handle_write(mem_dir, data, i)
+

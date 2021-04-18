@@ -3,10 +3,12 @@ from queue import Queue
 from computer.directory.directory_control import DirectoryControl, CacheAlert
 from computer.directory.directory_state import DirectoryState
 from computer.memory.memory_operation import MemoryOperation
+from computer.node.control.replace_action import ReplaceAction
 
 
 def get_directory_control():
     mem_bus = Queue()
+    replace_bus = []
     num_processors = 4
     p_buses = []
     update_buses = []
@@ -14,8 +16,11 @@ def get_directory_control():
         p_buses.append([Queue(), Queue()])
         p_buses.append(Queue())
         update_buses.append(Queue())
+        replace_bus.append(Queue())
 
-    directory_control = DirectoryControl(p_buses, mem_bus, update_buses)
+    directory_control = DirectoryControl(p_buses, mem_bus,
+                                         update_buses, num_processors,
+                                         replace_bus)
     directory = directory_control.directory
 
     """
@@ -169,3 +174,86 @@ class TestDirectoryControlMethods(unittest.TestCase):
         self.assertEqual(directory_control.directory.blockState[2],
                          DirectoryState.exclusive)
         self.assertFalse(directory_control.update_buses[0].empty())
+
+    def test_handle_memory_response(self):
+        directory_control = get_directory_control()
+        mem_bus = directory_control.mem_bus
+        pending_requests = directory_control.pending_requests
+        """
+        | N | Dir | Data | Sta | P    |
+        | 0 |  10 |  11  | DI  | 0000 |
+        | 1 |  20 |  21  | DS  | 0110 |
+        | 2 |  30 |  31  | DM  | 1000 |
+        | 3 |  40 |  41  | DS  | 1011 |
+        """
+        mem_dir = 50
+        data = 51
+        mem_bus.put([mem_dir, data])
+        pending_requests[0] = [CacheAlert.rdMiss, mem_dir]
+        directory_control.handle_memory_response()
+        self.assertEqual(directory_control.directory.processorRef[0],
+                         [1, 0, 0, 0])
+
+    def test_remove_reference(self):
+        directory_control = get_directory_control()
+        mem_bus = directory_control.mem_bus
+        """
+        | N | Dir | Data | Sta | P    |
+        | 0 |  10 |  11  | DI  | 0000 |
+        | 1 |  20 |  21  | DS  | 0110 |
+        | 2 |  30 |  31  | DM  | 1000 |
+        | 3 |  40 |  41  | DS  | 1011 |
+        """
+        # Remover referencia del procesador 0 en el bloque 2
+        directory_control.remove_reference(30, 0)
+        self.assertEqual(directory_control.directory.processorRef[2],
+                        [0, 0, 0, 0])
+        self.assertEqual(directory_control.directory.blockState[2],
+                         DirectoryState.uncached)
+        self.assertFalse(mem_bus.empty())
+        m = mem_bus.get()
+
+        """
+        | N | Dir | Data | Sta | P    |
+        | 0 |  10 |  11  | DI  | 0000 |
+        | 1 |  20 |  21  | DS  | 0110 |
+        | 2 |  30 |  31  | DI  | 0000 |
+        | 3 |  40 |  41  | DS  | 1011 |
+        """
+        # Remover referencia del procesador 1 en el bloque 1
+        directory_control.remove_reference(20, 1)
+        self.assertEqual(directory_control.directory.processorRef[1],
+                        [0, 0, 1, 0])
+        self.assertEqual(directory_control.directory.blockState[1],
+                         DirectoryState.shared)
+        self.assertTrue(mem_bus.empty())
+
+    def test_handle_replace_alerts(self):
+        directory_control = get_directory_control()
+        replace_bus = directory_control.replace_bus
+        """
+        | N | Dir | Data | Sta | P    |
+        | 0 |  10 |  11  | DI  | 0000 |
+        | 1 |  20 |  21  | DS  | 0110 |
+        | 2 |  30 |  31  | DM  | 1000 |
+        | 3 |  40 |  41  | DS  | 1011 |
+        """
+        replace_bus[1].put([ReplaceAction.share_replaced, 20])
+        replace_bus[2].put([ReplaceAction.share_replaced, 20])
+        replace_bus[2].put([ReplaceAction.share_replaced, 40])
+        replace_bus[0].put([ReplaceAction.share_replaced, 30])
+        directory_control.handle_replace_alerts()
+
+        """
+        | N | Dir | Data | Sta | P    |
+        | 0 |  10 |  11  | DI  | 0000 |
+        | 1 |  20 |  21  | DS  | 0000 |
+        | 2 |  30 |  31  | DM  | 0000 |
+        | 3 |  40 |  41  | DS  | 1001 |
+        """
+        self.assertEqual(directory_control.directory.processorRef[1],
+                         [0, 0, 0, 0])
+        self.assertEqual(directory_control.directory.processorRef[2],
+                         [0, 0, 0, 0])
+        self.assertEqual(directory_control.directory.processorRef[3],
+                         [1, 0, 0, 1])
