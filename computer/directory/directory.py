@@ -19,20 +19,27 @@ class Directory:
         # Creacion de la cache L2
         self.cache = L2(num_blocks)
 
-    def read(self, node_id, mem_dir, update_buses):
+    def check_mem_dir(self, mem_dir):
         # Verifica si la direccion se encuentra en cache
         if mem_dir not in self.cache.blockDirMem:
-            return [CacheAlert.rdMiss, node_id]
+            return False
 
         # Obtiene el index del elemento
         index = self.cache.blockDirMem.index(mem_dir)
 
-        # Verifica el estado del bloque es invalido
+        # Verifica si el estado del bloque es invalido
         state = self.blockState[index]
         if state == DirectoryState.uncached:
-            return [CacheAlert.rdMiss, node_id]
+            return False
+
+        return True
+
+    def read(self, node_id, mem_dir, update_buses):
+        # Obtiene el index del elemento
+        index = self.cache.blockDirMem.index(mem_dir)
 
         # Verifica si el estado del bloque es exclusivo
+        state = self.blockState[index]
         if state == DirectoryState.exclusive:
             owner = self.processorRef[index].index(1)
             if owner != node_id:
@@ -41,16 +48,9 @@ class Directory:
 
         # Se agrega la nueva referencia
         self.processorRef[index][node_id] = 1
-        return [CacheAlert.rdHit, self.cache.read(mem_dir)]
+        return self.cache.read(mem_dir)
 
-    def write(self, node_id, mem_dir, data, update_buses):
-        # Verifica si la direccion se encuentra en cache
-        if mem_dir not in self.cache.blockDirMem:
-            return [CacheAlert.wrMiss]
-
-        # Obtiene el index del elemento
-        index = self.cache.blockDirMem.index(mem_dir)
-
+    def write(self, node_id, mem_dir, data, index, newState, update_buses):
         # Notifica a las cache que deben invalidar el bloque
         for i in range(0, self.num_processors):
             if self.processorRef[index][i] == 1 and i != node_id:
@@ -62,7 +62,5 @@ class Directory:
         # Se escribe el valor en cache
         self.cache.write(mem_dir, data, index)
         # Se actualiza la referencia y el estado en el directorio
-        self.blockState[index] = DirectoryState.exclusive
+        self.blockState[index] = newState
         self.processorRef[index][node_id] = 1
-
-        return [CacheAlert.wrHit]

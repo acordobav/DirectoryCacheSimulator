@@ -37,35 +37,41 @@ def get_update_buses():
 
 class TestDirectoryMethods(unittest.TestCase):
 
+    def test_check_mem_dir(self):
+        directory = get_directory()
+        """
+        | N | Dir | Data | Sta | P   |
+        | 0 |  10 |  11  | DI  | 000 |
+        | 1 |  20 |  21  | DS  | 011 |
+        | 2 |  30 |  31  | DM  | 100 |
+        """
+        # Prueba de direccion que no se tiene
+        r = directory.check_mem_dir(40)
+        self.assertFalse(r)
+
+        # Prueba de direccion con estado invalido
+        r = directory.check_mem_dir(10)
+        self.assertFalse(r)
+
+        # Prueba con direccion que si es valida
+        r = directory.check_mem_dir(20)
+        self.assertTrue(r)
+
     def test_read(self):
         directory = get_directory()
         update_buses = get_update_buses()
 
-        # Prueba de rdMiss en direccion que no se tiene
-        node_id = 0
-        r = directory.read(node_id, 40, update_buses)
-        self.assertEqual(r[0], CacheAlert.rdMiss)
-        self.assertEqual(r[1], node_id)
-
-        # Prueba de rdMiss en direccion con estado invalido
-        node_id = 1
-        r = directory.read(node_id, 10, update_buses)
-        self.assertEqual(r[0], CacheAlert.rdMiss)
-        self.assertEqual(r[1], node_id)
-
         # Prueba de escritura en un bloque exclusive, por parte del owner
         node_id = 0
         r = directory.read(node_id, 30, update_buses)
-        self.assertEqual(r[0], CacheAlert.rdHit)
-        self.assertEqual(r[1], 31)
+        self.assertEqual(r, 31)
         self.assertEqual(directory.processorRef[2], [1, 0, 0])
 
         # Prueba de lectura en un bloque exclusive, por parte de un
         # procesador que no es el owner
         node_id = 2
         r = directory.read(node_id, 30, update_buses)
-        self.assertEqual(r[0], CacheAlert.rdHit)
-        self.assertEqual(r[1], 31)
+        self.assertEqual(r, 31)
         self.assertEqual(directory.processorRef[2], [1, 0, 1])
 
         # Se verifica que se haya generado la alerta de actualizacion
@@ -79,9 +85,14 @@ class TestDirectoryMethods(unittest.TestCase):
         directory = get_directory()
         update_buses = get_update_buses()
 
+        """
+        | N | Dir | Data | Sta | P   |
+        | 0 |  10 |  11  | DI  | 000 |
+        | 1 |  20 |  21  | DS  | 011 |
+        | 2 |  30 |  31  | DM  | 100 |
+        """
         # Escritura en un bloque invalido
-        r = directory.write(1, 10, 22, update_buses)
-        self.assertEqual(r[0], CacheAlert.wrHit)
+        directory.write(1, 10, 22, 0, DirectoryState.exclusive, update_buses)
         self.assertEqual(directory.processorRef[0], [0, 1, 0])
         self.assertEqual(directory.blockState[0], DirectoryState.exclusive)
         for i in range(0, len(update_buses)):
@@ -94,8 +105,7 @@ class TestDirectoryMethods(unittest.TestCase):
         | 2 |  30 |  31  | DM  | 100 |
         """
         # Escritura en un bloque modificado por parte del mismo procesador
-        r = directory.write(1, 10, 50, update_buses)
-        self.assertEqual(r[0], CacheAlert.wrHit)
+        directory.write(1, 10, 50, 0, DirectoryState.exclusive, update_buses)
         self.assertEqual(directory.processorRef[0], [0, 1, 0])
         self.assertEqual(directory.blockState[0], DirectoryState.exclusive)
         for i in range(0, len(update_buses)):
@@ -108,8 +118,7 @@ class TestDirectoryMethods(unittest.TestCase):
         | 2 |  30 |  31  | DM  | 100 |
         """
         # Escritura en unbloque modificado por otro procesador
-        r = directory.write(1, 30, 70, update_buses)
-        self.assertEqual(r[0], CacheAlert.wrHit)
+        directory.write(1, 30, 70, 2, DirectoryState.exclusive, update_buses)
         self.assertEqual(directory.processorRef[2], [0, 1, 0])
         self.assertEqual(directory.blockState[0], DirectoryState.exclusive)
         for i in range(0, len(update_buses)):
