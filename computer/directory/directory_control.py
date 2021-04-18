@@ -1,11 +1,22 @@
 from computer.memory.memory_operation import MemoryOperation
 from computer.directory.directory import Directory
+from computer.directory.directory_state import DirectoryState
+from computer.node.cache.cache_alert import CacheAlert
 
 
 class DirectoryControl:
     waiting = False
 
     def __init__(self, p_buses, mem_bus, update_buses):
+        """
+        Constructor
+        :param p_buses: lista con los buses para comunicarse con los procesadores,
+                        cada elemento de la lista es una sublista, donde la primera
+                        posicion es el bus donde el procesador escribe, y la segunda
+                        es el bus donde el procesador lee
+        :param mem_bus:
+        :param update_buses:
+        """
         # Lista con los buses de los procesadores
         self.p_buses = p_buses
 
@@ -18,17 +29,17 @@ class DirectoryControl:
         self.num_blocks = 4
         self.num_sets = self.num_blocks / self.associativity
 
-        # Estado de espera para cada procesador
-        self.waiting_state = [False] * len(p_buses)
-
-        self.directory = Directory(self.num_blocks, len(p_buses))
+        self.directory = Directory(self.num_blocks, len(p_buses),
+                                   update_buses, mem_bus)
         self.cache = self.directory.cache
 
-    def read_memory(self, mem_dir, node_id):
+        # Lista para manejar las solicitudes que esperan un resultado
+        # de una solicitud a memoria principal
+        self.pending_requests = [None] * len(p_buses)
+
+    def read_memory(self, mem_dir):
         # Se solicita la informacion a memoria principa;
         self.mem_bus.put([MemoryOperation.read, mem_dir])
-
-        self.waiting_state[node_id] = True
 
     def write_memory(self, mem_dir, data):
         # Se solicita una operacion de escritura a memoria principal
@@ -77,4 +88,24 @@ class DirectoryControl:
         index = self.get_index_min_references(x, y)
 
         # Se escribe la nueva informacion en el bloque
-        self.directory.write(node_id, mem_dir, data, index, newState, self.update_buses)
+        self.directory.write(node_id, mem_dir, data, index, newState)
+
+    def handle_read(self, mem_dir, node_id, requested):
+        is_data_available = self.directory.check_mem_dir(mem_dir)
+
+        # Se verifica que el dato se encuentre en memoria
+        if not is_data_available and not requested:
+            self.read_memory(mem_dir)
+            self.pending_requests[node_id] = [CacheAlert.rdMiss, mem_dir]
+            return
+
+        if not is_data_available:
+            return
+
+        # Se marca la solicitud como atendida
+        self.pending_requests[node_id] = None
+        # Se lee el dato
+        data = self.directory.read(node_id, mem_dir)
+        # Se envia el dato al procesador
+        bus = self.p_buses[node_id][1]
+        bus.put(data)
