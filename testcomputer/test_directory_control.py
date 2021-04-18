@@ -139,3 +139,33 @@ class TestDirectoryControlMethods(unittest.TestCase):
         self.assertIsNone(pending_requests[node_id])
         self.assertEqual(directory_control.directory.processorRef[2],
                          [1, 0, 1, 0])
+
+    def test_hande_write(self):
+        directory_control = get_directory_control()
+        """
+        | N | Dir | Data | Sta | P    |
+        | 0 |  10 |  11  | DI  | 0000 |
+        | 1 |  20 |  21  | DS  | 0110 |
+        | 2 |  30 |  31  | DM  | 1000 |
+        | 3 |  40 |  41  | DS  | 1011 |
+        """
+        # Escritura en un bloque que no esta cargado
+        mem_dir = 8
+        data = 81
+        node_id = 3
+        directory_control.handle_write(mem_dir, data, node_id)
+        self.assertEqual(directory_control.directory.processorRef[0],
+                         [0, 0, 0, 1])
+        self.assertEqual(directory_control.directory.blockState[0],
+                         DirectoryState.exclusive)
+
+        # Escritura en un bloque que esta cargado
+        mem_dir = 9
+        data = 81
+        node_id = 1
+        directory_control.handle_write(mem_dir, data, node_id)
+        self.assertEqual(directory_control.directory.processorRef[2],
+                         [0, 1, 0, 0])
+        self.assertEqual(directory_control.directory.blockState[2],
+                         DirectoryState.exclusive)
+        self.assertFalse(directory_control.update_buses[0].empty())

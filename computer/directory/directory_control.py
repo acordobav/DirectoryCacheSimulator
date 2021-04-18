@@ -29,7 +29,7 @@ class DirectoryControl:
         self.num_blocks = 4
         self.num_sets = self.num_blocks / self.associativity
 
-        self.directory = Directory(self.num_blocks, len(p_buses),
+        self.directory = Directory(self.num_blocks, len(update_buses),
                                    update_buses, mem_bus)
         self.cache = self.directory.cache
 
@@ -51,8 +51,8 @@ class DirectoryControl:
         :param index_set: numero del set solicitado
         :return: [index inicial, index final + 1]
         """
-        return [index_set * self.num_sets,
-                index_set * self.num_sets + self.associativity]
+        return [int(index_set * self.num_sets),
+                int(index_set * self.num_sets + self.associativity)]
 
     def get_index_min_references(self, x, y):
         """
@@ -109,3 +109,15 @@ class DirectoryControl:
         # Se envia el dato al procesador
         bus = self.p_buses[node_id][1]
         bus.put(data)
+
+    def handle_write(self, mem_dir, data, node_id):
+        is_data_in_cache = self.directory.check_mem_dir(mem_dir)
+
+        # Si dato no se encuentra en cache, se reemplaza un bloque
+        if not is_data_in_cache:
+            self.replaceBlock(mem_dir, data, DirectoryState.exclusive, node_id)
+
+        # Si ya se encuentra en cache, se actualiza su valor
+        index = self.directory.cache.blockDirMem.index(mem_dir)
+        self.directory.write(node_id, mem_dir, data,
+                             index, DirectoryState.exclusive)
