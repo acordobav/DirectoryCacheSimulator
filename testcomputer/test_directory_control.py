@@ -7,7 +7,7 @@ from computer.node.control.replace_action import ReplaceAction
 
 
 def get_directory_control():
-    mem_bus = Queue()
+    mem_bus = [Queue(), Queue()]
     replace_bus = []
     num_processors = 4
     p_buses = []
@@ -48,7 +48,7 @@ class TestDirectoryControlMethods(unittest.TestCase):
 
     def test_read_memory(self):
         directory = get_directory_control()
-        mem_bus = directory.mem_bus
+        mem_bus = directory.mem_bus[0]
 
         mem_dir = 4
         directory.read_memory(mem_dir)
@@ -59,7 +59,7 @@ class TestDirectoryControlMethods(unittest.TestCase):
 
     def test_write_memory(self):
         directory = get_directory_control()
-        mem_bus = directory.mem_bus
+        mem_bus = directory.mem_bus[0]
 
         data = 62235
         mem_dir = 7
@@ -105,7 +105,7 @@ class TestDirectoryControlMethods(unittest.TestCase):
 
     def test_handle_read(self):
         directory_control = get_directory_control()
-        mem_bus = directory_control.mem_bus
+        mem_bus = directory_control.mem_bus[0]
         pending_requests = directory_control.pending_requests
         """
         | N | Dir | Data | Sta | P    |
@@ -177,7 +177,7 @@ class TestDirectoryControlMethods(unittest.TestCase):
 
     def test_handle_memory_response(self):
         directory_control = get_directory_control()
-        mem_bus = directory_control.mem_bus
+        mem_bus = directory_control.mem_bus[1]
         pending_requests = directory_control.pending_requests
         """
         | N | Dir | Data | Sta | P    |
@@ -196,7 +196,7 @@ class TestDirectoryControlMethods(unittest.TestCase):
 
     def test_remove_reference(self):
         directory_control = get_directory_control()
-        mem_bus = directory_control.mem_bus
+        mem_bus = directory_control.mem_bus[0]
         """
         | N | Dir | Data | Sta | P    |
         | 0 |  10 |  11  | DI  | 0000 |

@@ -31,7 +31,7 @@ class DirectoryControl:
         self.num_sets = self.num_blocks / self.associativity
 
         self.directory = Directory(self.num_blocks, num_processors,
-                                   update_buses, mem_bus)
+                                   update_buses, mem_bus[0])
         self.cache = self.directory.cache
 
         # Lista para manejar las solicitudes que esperan un resultado
@@ -40,11 +40,11 @@ class DirectoryControl:
 
     def read_memory(self, mem_dir):
         # Se solicita la informacion a memoria principa;
-        self.mem_bus.put([MemoryOperation.read, mem_dir])
+        self.mem_bus[0].put([MemoryOperation.read, mem_dir])
 
     def write_memory(self, mem_dir, data):
         # Se solicita una operacion de escritura a memoria principal
-        self.mem_bus.put([MemoryOperation.write, mem_dir, data])
+        self.mem_bus[0].put([MemoryOperation.write, mem_dir, data])
 
     def get_limits_set(self, index_set):
         """
@@ -149,9 +149,9 @@ class DirectoryControl:
         solicitud enviada a memoria principal
         """
         # Se verifica si el bus esta vacio
-        while not self.mem_bus.empty():
+        while not self.mem_bus[1].empty():
             # Se obtienen los datos enviados en la respuesta
-            response = self.mem_bus.get()
+            response = self.mem_bus[1].get()
             mem_dir = response[0]
             data = response[1]
 
