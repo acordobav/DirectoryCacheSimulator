@@ -36,17 +36,23 @@ class TestMemoryMethods(unittest.TestCase):
         mem_dir = 0
         memory.read(mem_dir)
         self.assertFalse(mem_bus.empty())
-        self.assertEqual(mem_bus.get(), 10)
+        r = mem_bus.get()
+        self.assertEqual(r[0], mem_dir)
+        self.assertEqual(r[1], 10)
 
         mem_dir = 5
         memory.read(mem_dir)
         self.assertFalse(mem_bus.empty())
-        self.assertEqual(mem_bus.get(), 60)
+        r = mem_bus.get()
+        self.assertEqual(r[0], mem_dir)
+        self.assertEqual(r[1], 60)
 
         mem_dir = 7
         memory.read(mem_dir)
         self.assertFalse(mem_bus.empty())
-        self.assertEqual(mem_bus.get(), 80)
+        r = mem_bus.get()
+        self.assertEqual(r[0], mem_dir)
+        self.assertEqual(r[1], 80)
 
     def test_execute(self):
         memory = get_memory()
@@ -64,7 +70,9 @@ class TestMemoryMethods(unittest.TestCase):
                                        50, 60, 70, 56200])
 
         self.assertFalse(mem_bus[1].empty())
-        self.assertEqual(mem_bus[1].get(), 50)
+        r = mem_bus[1].get()
+        self.assertEqual(r[1], 50)
         self.assertFalse(mem_bus[1].empty())
-        self.assertEqual(mem_bus[1].get(), 70)
+        r = mem_bus[1].get()
+        self.assertEqual(r[1], 70)
 

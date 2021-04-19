@@ -14,8 +14,12 @@ class Control:
         self.update = update
         self.notify = notify
         self.waiting = False
+        self.instr = None
 
     def execute(self):
+        # Se atienden las solicitudes de actualizacion de estado
+        self.handle_update()
+
         if not self.waiting:
             # Si el procesador no esta esperando el resultado
             # de una solicitud a L2 se ejecuta una instruccion
@@ -27,6 +31,10 @@ class Control:
                 # Se procesa la respuesta
                 self.execRequestResponse()
 
+        # if not self.waiting:
+            # Se genera una nueva instruccion
+            # self.cpu.addInstr()
+
     def execRequestResponse(self):
         # Se procesa la respuesta
         result = self.inQueue.get()
@@ -36,9 +44,15 @@ class Control:
             memDir = self.alert[1]
             self.replaceCacheBlock(memDir, result, CoherenceState.shared)
 
+        self.waiting = False
+
     def execInstr(self):
         # Se obtiene una instruccion de la cola
         instr = self.cpu.popInstr()
+        self.instr = instr
+
+        # Se genera una nueva instruccion
+        self.cpu.addInstr()
 
         if instr[0] == InstrType.read:
             self.readInstr(instr[1])
@@ -133,3 +147,11 @@ class Control:
         self.cache.replace(memDir, data, newState, index)
 
         return True
+
+    def handle_update(self):
+        while not self.update.empty():
+            request = self.update.get()
+            mem_dir = request[0]
+            state = request[1]
+
+            self.cache.set_state(mem_dir, state)

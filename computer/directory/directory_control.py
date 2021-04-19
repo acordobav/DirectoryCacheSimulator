@@ -36,7 +36,7 @@ class DirectoryControl:
 
         # Lista para manejar las solicitudes que esperan un resultado
         # de una solicitud a memoria principal
-        self.pending_requests = [None] * num_processors
+        self.pending_requests = [None for _ in range(num_processors)]
 
     def read_memory(self, mem_dir):
         # Se solicita la informacion a memoria principa;
@@ -222,7 +222,9 @@ class DirectoryControl:
                     if request_type == CacheAlert.rdMiss:
                         self.handle_read(mem_dir, i, False)
 
-                    if request_type == CacheAlert.wrHit or CacheAlert.wrMiss:
+                    elif request_type == CacheAlert.wrHit or request_type == CacheAlert.wrMiss:
                         data = request[2]
                         self.handle_write(mem_dir, data, i)
 
+                    else:
+                        pass

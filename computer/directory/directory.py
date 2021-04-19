@@ -15,10 +15,12 @@ class Directory:
         self.mem_bus = mem_bus
 
         # Lista de estado para cada bloque
-        self.blockState = [DirectoryState.uncached] * num_blocks
+        # self.blockState = [DirectoryState.uncached] * num_blocks
+        self.blockState = [DirectoryState.uncached for _ in range(num_blocks)]
 
         # Vector que almacena las refencias de los procesadores
-        self.processorRef = [[0] * num_processors] * num_blocks
+        # self.processorRef = [[0] * num_processors] * num_blocks
+        self.processorRef = [[0 for _ in range(num_processors)] for _ in range(num_blocks)]
 
         # Creacion de la cache L2
         self.cache = L2(num_blocks)
@@ -59,10 +61,10 @@ class Directory:
 
     def write(self, node_id, mem_dir, data, index, newState):
         # Verifica si bloque es exclusivo y no es el mismo procesador el que escribe
-        if self.blockState[index] == DirectoryState.exclusive and \
-                self.processorRef[index].index(1) != node_id:
-            # Se realiza un write back a memoria
-            self.mem_write_back(index)
+        if self.blockState[index] == DirectoryState.exclusive:
+            if self.processorRef[index].index(1) != node_id:
+                # Se realiza un write back a memoria
+                self.mem_write_back(index)
 
         # Notifica a las cache que deben invalidar el bloque
         for i in range(0, self.num_processors):
@@ -77,6 +79,7 @@ class Directory:
         # Se actualiza la referencia y el estado en el directorio
         self.blockState[index] = newState
         self.processorRef[index][node_id] = 1
+        pass
 
     def mem_write_back(self, index):
         # Se realiza un write back a memoria

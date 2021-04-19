@@ -9,7 +9,7 @@ class Memory:
                         y el bus de salida en la segunda posicion
         """
         self.mem_bus = mem_bus
-        self.data = [0] * 8
+        self.data = [0 for _ in range(8)]
 
     def execute(self):
         while not self.mem_bus[0].empty():
@@ -36,4 +36,4 @@ class Memory:
         :param mem_dir: direccion de memoria
         :return: dato leido
         """
-        self.mem_bus[1].put(self.data[mem_dir])
+        self.mem_bus[1].put([mem_dir, self.data[mem_dir]])

@@ -6,11 +6,11 @@ class CPU:
     instr = []
 
     def __init__(self):
-        for i in range(0, 3):
+        for i in range(0, 2):
             self.addInstr()
 
     def generateMemDir(self):
-        return randrange(9)
+        return randrange(8)
 
     def generateInstr(self):
         val = randrange(10)
@@ -25,7 +25,7 @@ class CPU:
 
     def addInstr(self):
         newInstr = self.generateInstr()
-        self.instr.append(newInstr)
+        self.instr.insert(0, newInstr)
 
     def popInstr(self):
         return self.instr.pop()

@@ -2,10 +2,10 @@ class L2:
 
     def __init__(self, num_blocks):
         # Direccion de memoria para cada bloque
-        self.blockDirMem = [0] * num_blocks
+        self.blockDirMem = [0 for _ in range(num_blocks)]
 
         # Informacion almacenada en cada bloque
-        self.blockData = [0] * num_blocks
+        self.blockData = [0 for _ in range(num_blocks)]
 
     def write(self, mem_dir, data, index):
         self.blockDirMem[index] = mem_dir

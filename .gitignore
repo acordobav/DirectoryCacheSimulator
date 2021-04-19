@@ -1,16 +1,4 @@
 
 .idea/
 
-testcomputer/__pycache__/
-
-computer/node/cache/__pycache__/
-
-computer/node/control/__pycache__/
-
-computer/node/cpu/__pycache__/
-
-interface/__pycache__/
-
-computer/directory/__pycache__/
-
-computer/memory/__pycache__/
+**/__pycache__/

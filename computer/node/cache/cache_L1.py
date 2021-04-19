@@ -12,13 +12,14 @@ class L1:
         self.blockState = [CoherenceState.invalid] * blockNum
 
         # Direccion de memoria para cada bloque
-        self.blockDirMem = [0] * blockNum
+        self.blockDirMem = [0 for _ in range(blockNum)]
 
         # Informacion almacenada en cada bloque
-        self.blockData = [0] * blockNum
+        self.blockData = [0 for _ in range(blockNum)]
 
-    def setState(self, dirMem, state):
-        self.blockState[dirMem] = state
+    def set_state(self, dir_mem, state):
+        index = self.blockDirMem.index(dir_mem)
+        self.blockState[index] = state
 
     def read(self, dirMem):
         # Verifica si la direccion se encuentra en cache
