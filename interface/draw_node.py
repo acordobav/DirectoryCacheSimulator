@@ -69,11 +69,11 @@ def draw_cache_column(x, y, text):
         screen.blit(num_title, (x, y + space_y * (i + 1)))
 
 
-def draw_node(x, y, instr, mem_dir, data, state, alert):
+def draw_node(x, y, instr, mem_dir, data, state, alert, node_id):
     background_rect = pygame.Rect(x-5, y-5, 181, 272)
     pygame.draw.rect(screen, node_background, background_rect)
 
-    draw_cpu(x, y, 0, instr)
+    draw_cpu(x, y, node_id, instr)
 
     draw_cache(x, y+140, mem_dir, data, state)
 

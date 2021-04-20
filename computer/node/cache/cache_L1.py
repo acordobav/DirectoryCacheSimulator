@@ -18,8 +18,9 @@ class L1:
         self.blockData = [0 for _ in range(blockNum)]
 
     def set_state(self, dir_mem, state):
-        index = self.blockDirMem.index(dir_mem)
-        self.blockState[index] = state
+        if dir_mem in self.blockDirMem:
+            index = self.blockDirMem.index(dir_mem)
+            self.blockState[index] = state
 
     def read(self, dirMem):
         # Verifica si la direccion se encuentra en cache

@@ -38,7 +38,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RETURN:
+            if event.key == pygame.K_RETURN and not automatic_mode:
                 ex.exec()
                 update_node_info()
                 update_directory_info()
@@ -49,17 +49,19 @@ while running:
                 update_info(automatic_mode)
 
     screen.fill((255, 255, 255))
-    for i in range(0, 1):
-        draw_node(15 + (i * 50), 15,
+    for i in range(0, p):
+        draw_node(15 + (i * 200), 15,
                   cpu_instr[i],
                   cache_mem_dir[i],
                   cache_data[i],
                   cache_state[i],
-                  cpu_alerts[i])
+                  cpu_alerts[i], i)
+
     draw_directory(directory_mem_dir[0],
                    directory_data[0],
                    directory_state[0],
-                   directory_processor[0])
+                   directory_processor[0],
+                   directory_mem_operations[0])
     draw_memory(memory_data[0])
     draw_info(operation_mode[0], current_stage[0], clk[0])
     pygame.display.update()

@@ -1,5 +1,7 @@
+from computer.memory.memory_operation import MemoryOperation
 from computer.node.cpu.instr import InstrType
 from computer.node.cache.cache_alert import CacheAlert
+from computer.memory.memory_operation import MemoryOperation
 
 
 def dec_to_bin(num):
@@ -20,7 +22,6 @@ def dec_to_hex(num):
 
 
 def instr_to_string(instr, node_id):
-
     if instr is not None:
         string_instr = "P" + str(node_id) + ": "
         instr_type = instr[0]
@@ -61,3 +62,18 @@ def alert_to_string(alert):
         else:
             pass
     return text_alert
+
+
+def mem_op_to_string(mem_operation):
+    operation = mem_operation[0]
+    mem_dir = mem_operation[1]
+
+    result = ""
+    if operation == MemoryOperation.write:
+        data = mem_operation[2]
+        result = "wr " + dec_to_bin(mem_dir) + " " + \
+                 dec_to_hex(data)
+    else:
+        result = "rd " + dec_to_bin(mem_dir)
+
+    return result

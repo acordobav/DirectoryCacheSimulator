@@ -17,11 +17,11 @@ def node_execution(condition_obj, node, finished):
 
 
 class Executer:
-    def __init__(self):
+    def __init__(self, num_processors):
         # Manejo de hilos
         self.cond = threading.Condition()
 
-        self.num_processors = 1
+        self.num_processors = num_processors
 
         # Creacion de los nodos
         self.nodes = []
@@ -47,7 +47,8 @@ class Executer:
             self.nodes.append(node)
 
         # Creacion del directorio
-        mem_bus = [Queue(), Queue()]
+        self.mem_bus = Queue()
+        mem_bus = [self.mem_bus, Queue()]
         self.directory = DirectoryControl(p_buses,
                                           mem_bus,
                                           update_buses,
@@ -58,23 +59,27 @@ class Executer:
         self.memory = Memory(mem_bus)
 
         # Datos de simulacion
-        self.stage = 1
+        # self.stage = 1
         self.clk = 0
+
+        # Operaciones de memoria
+        self.mem_operations = []
 
     def exec(self):
         # Ejecucion de de los nodos
-        if self.stage == 1:
-            self.clk += 1
-            self.execute_nodes()
-            self.stage = 2
+        # if self.stage == 1:
+        self.clk += 1
+        self.execute_nodes()
+        # self.stage = 2
 
-        elif self.stage == 2:
-            self.directory.execute()
-            self.stage = 3
+        # elif self.stage == 2:
+        self.directory.execute()
+        self.extract_mem_operations()
+        # self.stage = 3
 
-        else:
-            self.memory.execute()
-            self.stage = 1
+        # else:
+        self.memory.execute()
+        # self.stage = 1
 
     def execute_nodes(self):
         self.cond.acquire()
@@ -83,3 +88,11 @@ class Executer:
 
         for i in range(0, self.num_processors):
             self.synQueue.get()
+
+    def extract_mem_operations(self):
+        self.mem_operations = []
+        while not self.mem_bus.empty():
+            self.mem_operations.append(self.mem_bus.get())
+
+        for op in self.mem_operations:
+            self.mem_bus.put(op)

@@ -14,7 +14,7 @@ def get_directory_control():
     update_buses = []
     for i in range(0, num_processors):
         p_buses.append([Queue(), Queue()])
-        p_buses.append(Queue())
+        # p_buses.append(Queue())
         update_buses.append(Queue())
         replace_bus.append(Queue())
 
@@ -257,3 +257,27 @@ class TestDirectoryControlMethods(unittest.TestCase):
                          [0, 0, 0, 0])
         self.assertEqual(directory_control.directory.processorRef[3],
                          [1, 0, 0, 1])
+
+    def test_handle_two_mem_requests_equal(self):
+        directory_control = get_directory_control()
+        """
+        | N | Dir | Data | Sta | P    |
+        | 0 |  10 |  11  | DI  | 0000 |
+        | 1 |  20 |  21  | DS  | 0110 |
+        | 2 |  30 |  31  | DM  | 1000 |
+        | 3 |  40 |  41  | DS  | 1011 |
+        """
+        mem_dir = 10
+        data = 500
+        mem_bus = directory_control.mem_bus
+        directory_control.pending_requests[0] = [CacheAlert.rdMiss, mem_dir]
+        directory_control.pending_requests[2] = [CacheAlert.rdMiss, mem_dir]
+
+        mem_bus[1].put([mem_dir, data])
+        mem_bus[1].put([mem_dir, data])
+
+        directory_control.handle_memory_response()
+
+        directory_control.execute()
+
+        self.assertEqual(directory_control.directory.processorRef[0], [1, 0, 1, 0])

@@ -18,6 +18,6 @@ def draw_info(operation_mode, current_stage, clk):
     screen.blit(operation_mode_text, (x, y))
 
     # Etapa actual
-    y += 30
-    stage_text = font_bold.render("Etapa: " + current_stage, True, black)
-    screen.blit(stage_text, (x, y))
+    # y += 30
+    # stage_text = font_bold.render("Etapa: " + current_stage, True, black)
+    # screen.blit(stage_text, (x, y))

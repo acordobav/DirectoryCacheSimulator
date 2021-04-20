@@ -1,7 +1,7 @@
 from computer.executer import Executer
 from computer.node.cache.coherence_state import CoherenceState
 from computer.directory.directory_state import DirectoryState
-from interface.conversions import instr_to_string, alert_to_string
+from interface.conversions import instr_to_string, alert_to_string, mem_op_to_string
 
 # Nodo
 cpu_instr = [[], [], [], []]
@@ -15,6 +15,7 @@ directory_mem_dir = [[]]
 directory_data = [[]]
 directory_state = [[]]
 directory_processor = [[]]
+directory_mem_operations = [[]]
 
 # Memoria
 memory_data = [[]]
@@ -24,9 +25,11 @@ operation_mode = ["Manual"]
 current_stage = ["Nodo"]
 clk = [1]
 
+p = 4
+
 
 def update_node_info():
-    for i in range(0, 1):
+    for i in range(0, p):
         # Conversion de las instrucciones
         instr_list = []
         for instr in ex.nodes[i].cpu.instr:
@@ -70,9 +73,16 @@ def update_directory_info():
     processor_ref = []
     refs = ex.directory.directory.processorRef
     for block in refs:
-        ref = str(block[0])  # + str(block[1])  # + str(block[2]) + str(block[3])
+        ref = ""
+        for i in range(0, p):
+            ref += str(block[i])
         processor_ref.append(ref)
     directory_processor[0] = processor_ref
+
+    mem_op = []
+    for op in ex.mem_operations:
+        mem_op.append(mem_op_to_string(op))
+    directory_mem_operations[0] = mem_op
 
 
 def update_memory_info():
@@ -81,13 +91,13 @@ def update_memory_info():
 
 def update_info(mode):
     # Etapa
-    stage = ex.stage
-    if stage == 2:
-        current_stage[0] = "Nodos"
-    elif stage == 3:
-        current_stage[0] = "Directorio"
-    else:
-        current_stage[0] = "Memoria"
+    # stage = ex.stage
+    # if stage == 2:
+    #     current_stage[0] = "Nodos"
+    # elif stage == 3:
+    #     current_stage[0] = "Directorio"
+    # else:
+    #     current_stage[0] = "Memoria"
 
     # CLK
     clk[0] = ex.clk
@@ -99,7 +109,7 @@ def update_info(mode):
         operation_mode[0] = "Manual"
 
 
-ex = Executer()
+ex = Executer(p)
 update_node_info()
 update_directory_info()
 update_memory_info()

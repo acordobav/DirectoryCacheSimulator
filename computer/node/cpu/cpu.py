@@ -3,9 +3,9 @@ from computer.node.cpu.instr import InstrType
 
 
 class CPU:
-    instr = []
 
     def __init__(self):
+        self.instr = []
         for i in range(0, 2):
             self.addInstr()
 
