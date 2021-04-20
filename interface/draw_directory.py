@@ -6,7 +6,7 @@ from interface.draw_node import draw_node_element_rect, draw_cache_column
 
 def draw_directory(mem_dir, data, state, processors):
     x = 15
-    y = 300
+    y = 350
     draw_node_element_rect(x, y, 255, 175, "Caché L2 & Directorio")
 
     x += 10
@@ -22,7 +22,7 @@ def draw_directory(mem_dir, data, state, processors):
                                 dec_to_hex(data[1]),
                                 dec_to_hex(data[2]),
                                 dec_to_hex(data[3])])
-    pygame.draw.line(screen, white, (x + 110, 337), (x + 110, 462))
+    pygame.draw.line(screen, white, (x + 110, y + 35), (x + 110, y + 160))
 
     draw_cache_column(x+120, y, ["Estado"] + state)
     draw_cache_column(x+170, y, ["Procesador"] + processors)

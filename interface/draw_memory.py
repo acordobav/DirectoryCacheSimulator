@@ -5,7 +5,7 @@ from interface.conversions import dec_to_bin
 
 def draw_memory(mem_data):
     x = 300
-    y = 300
+    y = 350
 
     draw_node_element_rect(x, y, 125, 285, "Memoria")
 

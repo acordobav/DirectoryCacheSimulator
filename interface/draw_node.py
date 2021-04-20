@@ -1,8 +1,20 @@
 from interface.global_variables import pygame, space_y, screen
 from interface.font import font, font_bold
 from interface.colors import cpu_text_color, cpu_rect_background, \
-                             cpu_rect_border, cpu_rect_aux, node_background
+                             cpu_rect_border, cpu_rect_aux, node_background, \
+                             cpu_alert_background
 from interface.conversions import dec_to_bin, dec_to_hex
+
+
+def draw_alert_rect(x, y, alert):
+    width = 170
+    background_rect = pygame.Rect(x, y, width, 33)
+    pygame.draw.rect(screen, cpu_alert_background, background_rect, 0, 10)
+
+    title = font_bold.render(alert, True, cpu_text_color)
+
+    title_width = title.get_width()
+    screen.blit(title, (x + abs(width - title_width) / 2, y + 5))
 
 
 def draw_node_element_rect(x, y, width, height, title_text):
@@ -40,7 +52,7 @@ def draw_cpu(x, y, num, cpu_instr):
 
 def draw_cache(x, y, mem_dir, data, state):
     max_width = 170
-    draw_node_element_rect(x, y, max_width, 120, "Cache L1")
+    draw_node_element_rect(x, y, max_width, 120, "Caché L1")
 
     x += 10
     y += 5
@@ -57,10 +69,12 @@ def draw_cache_column(x, y, text):
         screen.blit(num_title, (x, y + space_y * (i + 1)))
 
 
-def draw_node(x, y, instr, mem_dir, data, state):
+def draw_node(x, y, instr, mem_dir, data, state, alert):
     background_rect = pygame.Rect(x-5, y-5, 181, 272)
     pygame.draw.rect(screen, node_background, background_rect)
 
     draw_cpu(x, y, 0, instr)
 
     draw_cache(x, y+140, mem_dir, data, state)
+
+    draw_alert_rect(x, y+280, alert)

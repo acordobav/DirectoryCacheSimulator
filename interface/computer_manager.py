@@ -1,13 +1,14 @@
 from computer.executer import Executer
 from computer.node.cache.coherence_state import CoherenceState
 from computer.directory.directory_state import DirectoryState
-from interface.conversions import instr_to_string
+from interface.conversions import instr_to_string, alert_to_string
 
 # Nodo
 cpu_instr = [[], [], [], []]
 cache_mem_dir = [[], [], [], []]
 cache_data = [[], [], [], []]
 cache_state = [[], [], [], []]
+cpu_alerts = ["", "", "", ""]
 
 # Directorio
 directory_mem_dir = [[]]
@@ -16,7 +17,13 @@ directory_state = [[]]
 directory_processor = [[]]
 
 # Memoria
-memory_data = []
+memory_data = [[]]
+
+# Modo de operacion
+operation_mode = ["Manual"]
+current_stage = ["Nodo"]
+clk = [1]
+
 
 def update_node_info():
     for i in range(0, 1):
@@ -24,7 +31,7 @@ def update_node_info():
         instr_list = []
         for instr in ex.nodes[i].cpu.instr:
             instr_list.append(instr_to_string(instr, i))
-        instr_list.append(instr_to_string(ex.nodes[i].control.instr,i))
+        instr_list.append(instr_to_string(ex.nodes[i].control.instr, i))
         cpu_instr[i] = instr_list
 
         cache_mem_dir[i] = ex.nodes[i].cache.blockDirMem
@@ -41,13 +48,11 @@ def update_node_info():
                 cach_states.append("I")
         cache_state[i] = cach_states
 
+        alert = ex.nodes[i].control.alert
+        cpu_alerts[i] = alert_to_string(alert)
+
 
 def update_directory_info():
-    # global directory_mem_dir
-    # global directory_data
-    # global directory_state
-    # global directory_processor
-
     directory_mem_dir[0] = ex.directory.directory.cache.blockDirMem
     directory_data[0] = ex.directory.cache.blockData
 
@@ -65,18 +70,36 @@ def update_directory_info():
     processor_ref = []
     refs = ex.directory.directory.processorRef
     for block in refs:
-        ref = str(block[0]) # + str(block[1])  # + str(block[2]) + str(block[3])
+        ref = str(block[0])  # + str(block[1])  # + str(block[2]) + str(block[3])
         processor_ref.append(ref)
     directory_processor[0] = processor_ref
 
 
 def update_memory_info():
-    global memory_data
-    memory_data = ex.memory.data
+    memory_data[0] = ex.memory.data
+
+
+def update_info(mode):
+    # Etapa
+    stage = ex.stage
+    if stage == 2:
+        current_stage[0] = "Nodos"
+    elif stage == 3:
+        current_stage[0] = "Directorio"
+    else:
+        current_stage[0] = "Memoria"
+
+    # CLK
+    clk[0] = ex.clk
+
+    # Modo de operacion
+    if mode:
+        operation_mode[0] = "Automatico"
+    else:
+        operation_mode[0] = "Manual"
 
 
 ex = Executer()
-ex.exec()
 update_node_info()
 update_directory_info()
 update_memory_info()

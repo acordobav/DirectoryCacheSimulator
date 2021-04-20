@@ -67,9 +67,7 @@ class Control:
         # self.cpu.addInstr()
 
     def calcInstr(self):
-        # self.outQueue.put(None)
-        # self.outQueue.put(None)
-        pass
+        self.alert = []
 
     def writeInstr(self, memDir, data):
         result = self.cache.write(
@@ -97,8 +95,7 @@ class Control:
 
         # Si la lectura fue un hit no se realiza ninguna accion
         if result[0] == CacheAlert.rdHit:
-            # self.outQueue.put(None)
-            # self.outQueue.put(None)
+            self.alert = [CacheAlert.rdHit, memDir]
             return
 
         # Se espera para obtener el valor de la cache L2

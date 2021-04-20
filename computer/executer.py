@@ -1,18 +1,34 @@
-import time
+import threading
 from queue import Queue
 from computer.node.node import Node
 from computer.directory.directory_control import DirectoryControl
 from computer.memory.memory import Memory
 
 
+def node_execution(condition_obj, node, finished):
+    while True:
+        # Espera por la senal de reloj
+        condition_obj.acquire()
+        condition_obj.wait()
+        condition_obj.release()
+
+        node.exec()
+        finished.put(True)
+
+
 class Executer:
     def __init__(self):
+        # Manejo de hilos
+        self.cond = threading.Condition()
+
         self.num_processors = 1
+
         # Creacion de los nodos
         self.nodes = []
         p_buses = []
         update_buses = []
         notify_buses = []
+        self.synQueue = Queue()
         for i in range(0, self.num_processors):
             inQueue = Queue()
             outQueue = Queue()
@@ -24,7 +40,11 @@ class Executer:
             notify = Queue()
             notify_buses.append(notify)
 
-            self.nodes.append(Node(inQueue, outQueue, update, notify))
+            node = Node(inQueue, outQueue, update, notify)
+            t = threading.Thread(target=node_execution, args=(self.cond, node, self.synQueue,), daemon=True)
+            t.start()
+
+            self.nodes.append(node)
 
         # Creacion del directorio
         mem_bus = [Queue(), Queue()]
@@ -37,16 +57,29 @@ class Executer:
         # Creacion de la memoria principal
         self.memory = Memory(mem_bus)
 
+        # Datos de simulacion
+        self.stage = 1
+        self.clk = 0
+
     def exec(self):
-        # Ejecucion de cada uno de los nodos
+        # Ejecucion de de los nodos
+        if self.stage == 1:
+            self.clk += 1
+            self.execute_nodes()
+            self.stage = 2
+
+        elif self.stage == 2:
+            self.directory.execute()
+            self.stage = 3
+
+        else:
+            self.memory.execute()
+            self.stage = 1
+
+    def execute_nodes(self):
+        self.cond.acquire()
+        self.cond.notify_all()
+        self.cond.release()
+
         for i in range(0, self.num_processors):
-            self.nodes[i].exec()
-
-        # time.sleep(2)
-
-        self.directory.execute()
-
-        # time.sleep(2)
-
-        self.memory.execute()
-
+            self.synQueue.get()
