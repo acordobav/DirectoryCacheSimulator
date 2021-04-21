@@ -119,11 +119,4 @@ class Control:
             mem_dir = request[0]
             state = request[1]
 
-            if len(self.alert) == 0:
-                self.cache.set_state(mem_dir, state)
-
-            else:
-                if self.alert[0] == CacheAlert.rdMiss and self.alert[1] == mem_dir:
-                    pass
-                else:
-                    self.cache.set_state(mem_dir, state)
+            self.cache.set_state(mem_dir, state)
