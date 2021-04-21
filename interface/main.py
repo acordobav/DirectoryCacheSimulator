@@ -3,6 +3,7 @@ from interface.draw_node import draw_node
 from interface.draw_directory import draw_directory
 from interface.draw_memory import draw_memory
 from interface.draw_info import draw_info
+from interface.instr_modifier import draw_instr_modifier, click_input
 from interface.computer_manager import *
 from threading import Thread
 import time
@@ -35,6 +36,10 @@ running = True
 
 while running:
     for event in pygame.event.get():
+        if event.type == pygame.MOUSEBUTTONUP:
+            pos = pygame.mouse.get_pos()
+            click_input(pos[0], pos[1], automatic_mode, ex)
+            update_node_info()
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
@@ -64,5 +69,6 @@ while running:
                    directory_mem_operations[0])
     draw_memory(memory_data[0])
     draw_info(operation_mode[0], current_stage[0], clk[0])
+    draw_instr_modifier(automatic_mode)
     pygame.display.update()
 
