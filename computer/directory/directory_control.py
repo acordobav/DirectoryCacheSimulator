@@ -161,8 +161,9 @@ class DirectoryControl:
             # Se obtiene el id del nodo que realizo la solicitud
             index = self.pending_requests.index([CacheAlert.rdMiss, mem_dir])
 
-            # Se almacenan en la cache
-            self.replaceBlock(mem_dir, data, DirectoryState.shared, index)
+            if mem_dir not in self.cache.blockDirMem:
+                # Se almacenan en la cache
+                self.replaceBlock(mem_dir, data, DirectoryState.shared, index)
 
     def remove_reference(self, mem_dir, node_id):
         """
