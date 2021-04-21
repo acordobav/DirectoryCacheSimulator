@@ -18,8 +18,11 @@ class L1:
         self.blockData = [0 for _ in range(blockNum)]
 
     def set_state(self, dir_mem, state):
-        if dir_mem in self.blockDirMem:
-            index = self.blockDirMem.index(dir_mem)
+        if dir_mem not in self.blockDirMem:
+            return
+
+        index = self.blockDirMem.index(dir_mem)
+        if not self.blockState[index] == CoherenceState.invalid:
             self.blockState[index] = state
 
     def read(self, dirMem):

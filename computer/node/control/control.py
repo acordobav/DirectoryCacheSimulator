@@ -33,10 +33,6 @@ class Control:
         # Se atienden las solicitudes de actualizacion de estado
         self.handle_update()
 
-        # if not self.waiting:
-            # Se genera una nueva instruccion
-            # self.cpu.addInstr()
-
     def execRequestResponse(self):
         # Se procesa la respuesta
         result = self.inQueue.get()
@@ -117,25 +113,17 @@ class Control:
         # Se reemplaza el bloque
         self.cache.replace(memDir, data, newState, index)
 
-    def replaceAux(self, memDir, data, state, replaceAction, newState):
-        if state not in self.cache.blockState:
-            return False
-
-        index = memDir % 2
-
-        # Se notifica al directorio que el bloque se libera
-        oldMemDir = self.cache.blockDirMem[index]
-        self.notify.put([replaceAction, oldMemDir])
-
-        # Se reemplaza el bloque
-        self.cache.replace(memDir, data, newState, index)
-
-        return True
-
     def handle_update(self):
         while not self.update.empty():
             request = self.update.get()
             mem_dir = request[0]
             state = request[1]
 
-            self.cache.set_state(mem_dir, state)
+            if len(self.alert) == 0:
+                self.cache.set_state(mem_dir, state)
+
+            else:
+                if self.alert[0] == CacheAlert.rdMiss and self.alert[1] == mem_dir:
+                    pass
+                else:
+                    self.cache.set_state(mem_dir, state)
