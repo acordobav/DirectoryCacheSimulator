@@ -78,6 +78,8 @@ class Executer:
         self.directory.execute()
         self.extract_mem_operations()
 
+        self.update_state()
+
         # for i in range(0, self.num_processors):
         #     self.nodes[i].exec_state_updates()
 
@@ -96,3 +98,20 @@ class Executer:
 
         for op in self.mem_operations:
             self.mem_bus.put(op)
+
+    def update_state(self):
+        for i in range(0, self.num_processors):
+            updates = []
+
+            update_bus = self.nodes[i].control.update
+            while not update_bus.empty():
+                request = update_bus.get()
+                updates.append(request)
+
+            for update in updates:
+                update_bus.put(update)
+
+            self.nodes[i].exec_state_updates()
+
+            for update in updates:
+                update_bus.put(update)
