@@ -12,7 +12,7 @@ class TestControlMethods(unittest.TestCase):
         invalidate = Queue()
         notify = Queue()
         cpu = CPU()
-        cache = L1(3)
+        cache = L1(2)
 
         return Control(cpu, cache, inQueue, outQueue, invalidate, notify)
 
@@ -24,74 +24,46 @@ class TestControlMethods(unittest.TestCase):
         | Num | Dir | Data | State
         | 0 | 0 | 0 | I
         | 1 | 0 | 0 | I
-        | 2 | 0 | 0 | I
         """
-        control.replaceCacheBlock(10, 50, CoherenceState.modified);
+        control.replaceCacheBlock(2, 50, CoherenceState.modified);
         r1 = notify.get()
-        self.assertEqual(r1[0], ReplaceAction.invalid_replace)
-        self.assertEqual(r1[1], 0)
+        self.assertEqual(r1, 0)
 
         """
         | Num | Dir | Data | State
-        | 0 | 10 | 50 | M
+        | 0 | 2 | 50 | M
         | 1 | 0 | 0 | I
-        | 2 | 0 | 0 | I
         """
-        control.replaceCacheBlock(74, 120, CoherenceState.shared)
-        r2 = notify.get()
-        self.assertEqual(r2[0], ReplaceAction.invalid_replace)
-        self.assertEqual(r2[1], 0)
+        control.replaceCacheBlock(6, 50, CoherenceState.modified);
+        r1 = notify.get()
+        self.assertEqual(r1, 2)
 
         """
         | Num | Dir | Data | State
-        | 0 | 10 | 50 | M
-        | 1 | 74 | 120 | S
-        | 2 | 0 | 0 | I
+        | 0 | 6 | 50 | M
+        | 1 | 0 | 0 | I
         """
-        control.replaceCacheBlock(80, 45, CoherenceState.shared)
-        r3 = notify.get()
-        self.assertEqual(r3[0], ReplaceAction.invalid_replace)
-        self.assertEqual(r3[1], 0)
+        control.replaceCacheBlock(7, 11, CoherenceState.modified);
+        r1 = notify.get()
+        self.assertEqual(r1, 0)
 
         """
         | Num | Dir | Data | State
-        | 0 | 10 | 50 | M
-        | 1 | 74 | 120 | S
-        | 2 | 80 | 45 | S
+        | 0 | 6 | 50 | M
+        | 1 | 7 | 11 | M
         """
-        control.replaceCacheBlock(95, 47, CoherenceState.modified)
-        r3 = notify.get()
-        self.assertEqual(r3[0], ReplaceAction.share_replaced)
-        self.assertEqual(r3[1], 74)
+        control.replaceCacheBlock(9, 15, CoherenceState.modified);
+        r1 = notify.get()
+        self.assertEqual(r1, 7)
 
         """
         | Num | Dir | Data | State
-        | 0 | 10 | 50 | M
-        | 1 | 95 | 47 | M
-        | 2 | 80 | 45 | S
+        | 0 | 6 | 50 | M
+        | 1 | 9 | 15 | M
         """
-        control.replaceCacheBlock(57, 47, CoherenceState.modified)
-        r3 = notify.get()
-        self.assertEqual(r3[0], ReplaceAction.share_replaced)
-        self.assertEqual(r3[1], 80)
-
-        """
-        | Num | Dir | Data | State
-        | 0 | 10 | 50 | M
-        | 1 | 95 | 47 | M
-        | 2 | 57 | 47 | M
-        """
-        control.replaceCacheBlock(1, 20, CoherenceState.shared)
-        r3 = notify.get()
-        self.assertEqual(r3[0], ReplaceAction.modified_replaced)
-        self.assertEqual(r3[1], 10)
-
-        """
-        | Num | Dir | Data | State
-        | 0 | 01 | 20 | S
-        | 1 | 95 | 47 | M
-        | 2 | 57 | 47 | M
-        """
+        control.replaceCacheBlock(0, 11, CoherenceState.modified);
+        r1 = notify.get()
+        self.assertEqual(r1, 6)
 
     def test_readInstr(self):
         control = self.getControl()
@@ -105,9 +77,8 @@ class TestControlMethods(unittest.TestCase):
         | Num | Dir | Data | State
         | 0 | 0 | 0 | I
         | 1 | 0 | 0 | I
-        | 2 | 0 | 0 | I
         """
-        memDir = 50
+        memDir = 2
         control.readInstr(memDir)
 
         # Debe generar un rd miss
@@ -119,14 +90,32 @@ class TestControlMethods(unittest.TestCase):
 
         # Debe notificar que cambio un bloque en la cache
         r = notify.get()
-        self.assertEqual(r[0], ReplaceAction.invalid_replace)
-        self.assertEqual(r[1], 0)
+        self.assertEqual(r, 0)
 
         """
         | Num | Dir | Data | State
         | 0 | 50 | 50 | S
         | 1 | 0  | 0  | I
-        | 2 | 0  | 0  | I
+        """
+        inQueue.put(34)
+        memDir = 3
+        control.readInstr(memDir)
+
+        # Debe generar un rd miss
+        r = outQueue.get()
+        self.assertEqual(r[0], CacheAlert.rdMiss)
+        self.assertEqual(r[1], memDir)
+
+        control.execute()
+
+        # Debe notificar que cambio un bloque en la cache
+        r = notify.get()
+        self.assertEqual(r, 0)
+
+        """
+        | Num | Dir | Data | State
+        | 0 | 2 | 50 | S
+        | 1 | 3 | 34 | S
         """
 
     def test_writeInstr(self):
@@ -135,20 +124,17 @@ class TestControlMethods(unittest.TestCase):
         outQueue = control.outQueue
         notify = control.notify
 
-        control.cache.blockState = [CoherenceState.invalid,
-                                    CoherenceState.shared,
-                                    CoherenceState.modified]
+        control.cache.blockState = [CoherenceState.modified,
+                                    CoherenceState.shared]
 
-        control.cache.blockDirMem = [1, 2, 3]
+        control.cache.blockDirMem = [2, 3]
 
         control.cache.blockData = [14856,
-                                   684,
-                                   8640]
+                                   684]
         """
         | Num | Dir | Data | State
-        | 0 | 1 | 14856 | I
-        | 1 | 2 | 684   | S
-        | 2 | 3 | 8640  | M
+        | 0 | 2 | 14856 | M
+        | 1 | 3 | 684   | S
         """
         inQueue.put(None)
         control.writeInstr(1, 50)
@@ -160,17 +146,15 @@ class TestControlMethods(unittest.TestCase):
 
         # Notificacion replacement
         r = notify.get()
-        self.assertEqual(r[0], ReplaceAction.invalid_replace)
-        self.assertEqual(r[1], 1)
+        self.assertEqual(r, 3)
 
         i = control.cache.blockDirMem.index(1)
         self.assertEqual(control.cache.blockState[i], CoherenceState.modified)
 
         """
         | Num | Dir | Data | State
-        | 0 | 1 | 50    | M
-        | 1 | 2 | 684   | S
-        | 2 | 3 | 8640  | M
+        | 0 | 2 | 14856 | M
+        | 1 | 1 | 50    | M
         """
         inQueue.put(None)
         control.writeInstr(2, 700)
@@ -185,27 +169,16 @@ class TestControlMethods(unittest.TestCase):
 
         """
         | Num | Dir | Data | State
-        | 0 | 1 | 50    | M
-        | 1 | 2 | 700   | M
-        | 2 | 3 | 8640  | M
+        | 0 | 2 | 700   | M
+        | 1 | 1 | 50    | M
         """
         inQueue.put(None)
-        control.writeInstr(3, 800)
+        control.writeInstr(4, 800)
 
         # Notificacion wrHit
         r = outQueue.get()
-        self.assertEqual(r[0], CacheAlert.wrHit)
-        self.assertEqual(r[1], 3)
+        self.assertEqual(r[0], CacheAlert.wrMiss)
+        self.assertEqual(r[1], 4)
 
-        i = control.cache.blockDirMem.index(3)
+        i = control.cache.blockDirMem.index(4)
         self.assertEqual(control.cache.blockState[i], CoherenceState.modified)
-
-    # def test_execute(self):
-    #     control = self.getControl()
-    #     inQueue = control.inQueue
-    #
-    #     for i in range(0, 5):
-    #         inQueue.put(10)
-    #
-    #     for i in range(0, 4):
-    #         control.execute()

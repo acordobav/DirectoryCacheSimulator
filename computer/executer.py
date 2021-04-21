@@ -66,20 +66,19 @@ class Executer:
         self.mem_operations = []
 
     def exec(self):
+        # Ejecucion de la memoria principal
+        self.memory.execute()
+
         # Ejecucion de de los nodos
-        # if self.stage == 1:
         self.clk += 1
         self.execute_nodes()
-        # self.stage = 2
 
-        # elif self.stage == 2:
+        # Ejecucion del directorio
         self.directory.execute()
         self.extract_mem_operations()
-        # self.stage = 3
 
-        # else:
-        self.memory.execute()
-        # self.stage = 1
+        for i in range(0, self.num_processors):
+            self.nodes[i].exec_state_updates()
 
     def execute_nodes(self):
         self.cond.acquire()

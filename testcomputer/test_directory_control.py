@@ -238,10 +238,10 @@ class TestDirectoryControlMethods(unittest.TestCase):
         | 2 |  30 |  31  | DM  | 1000 |
         | 3 |  40 |  41  | DS  | 1011 |
         """
-        replace_bus[1].put([ReplaceAction.share_replaced, 20])
-        replace_bus[2].put([ReplaceAction.share_replaced, 20])
-        replace_bus[2].put([ReplaceAction.share_replaced, 40])
-        replace_bus[0].put([ReplaceAction.share_replaced, 30])
+        replace_bus[1].put(20)
+        replace_bus[2].put(20)
+        replace_bus[2].put(40)
+        replace_bus[0].put(30)
         directory_control.handle_replace_alerts()
 
         """

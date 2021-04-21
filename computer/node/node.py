@@ -16,3 +16,6 @@ class Node:
 
     def exec(self):
         self.control.execute()
+
+    def exec_state_updates(self):
+        self.control.handle_update()

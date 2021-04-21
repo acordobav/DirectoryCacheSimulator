@@ -24,7 +24,7 @@ def automatic_execute():
             update_directory_info()
             update_memory_info()
             update_info(automatic_mode)
-        time.sleep(2)
+        time.sleep(3)
 
 
 t1 = Thread(target=automatic_execute, daemon=True)

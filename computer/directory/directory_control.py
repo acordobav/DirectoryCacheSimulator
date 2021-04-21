@@ -196,7 +196,7 @@ class DirectoryControl:
             bus = self.replace_bus[i]
             while not bus.empty():
                 replace_action = bus.get()
-                self.remove_reference(replace_action[1], i)
+                self.remove_reference(replace_action, i)
 
     def execute(self):
         # Se atienden alertas de reemplazo de datos en L1

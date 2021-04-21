@@ -68,7 +68,8 @@ class Directory:
 
         # Notifica a las cache que deben invalidar el bloque
         for i in range(0, self.num_processors):
-            if self.processorRef[index][i] == 1 and i != node_id:
+            # if self.processorRef[index][i] == 1 and i != node_id:
+            if i != node_id:
                 # Notificacion
                 self.update_buses[i].put([mem_dir, CoherenceState.invalid])
                 # Eliminacion de la referencia en el directorio

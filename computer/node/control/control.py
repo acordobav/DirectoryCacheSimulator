@@ -1,3 +1,5 @@
+import random
+
 from computer.node.cpu.instr import InstrType
 from computer.node.cache.cache_L1 import CacheAlert, CoherenceState
 from computer.node.control.replace_action import ReplaceAction
@@ -105,36 +107,21 @@ class Control:
         self.waiting = True
 
     def replaceCacheBlock(self, memDir, data, newState):
-        # Se intenta reemplazar un bloque invalido
-        if self.replaceAux(memDir,
-                           data,
-                           CoherenceState.invalid,
-                           ReplaceAction.invalid_replace,
-                           newState):
-            return
+        index = memDir % 2
 
-        # Se intenta reemplazar un bloque compartido
-        if self.replaceAux(memDir,
-                           data,
-                           CoherenceState.shared,
-                           ReplaceAction.share_replaced,
-                           newState):
-            return
+        # Se notifica al directorio que el bloque se libera
+        oldMemDir = self.cache.blockDirMem[index]
 
-        # Se intenta reemplazar un bloque modificado
-        if self.replaceAux(memDir,
-                           data,
-                           CoherenceState.modified,
-                           ReplaceAction.modified_replaced,
-                           newState):
-            return
+        self.notify.put(oldMemDir)
+
+        # Se reemplaza el bloque
+        self.cache.replace(memDir, data, newState, index)
 
     def replaceAux(self, memDir, data, state, replaceAction, newState):
         if state not in self.cache.blockState:
             return False
 
-        # Se obtiene el index del elemento compartido
-        index = self.cache.blockState.index(state)
+        index = memDir % 2
 
         # Se notifica al directorio que el bloque se libera
         oldMemDir = self.cache.blockDirMem[index]
