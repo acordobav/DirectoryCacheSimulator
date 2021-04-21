@@ -1,4 +1,4 @@
-from random import randrange
+from numpy import random
 from computer.node.cpu.instr import InstrType
 
 
@@ -10,18 +10,19 @@ class CPU:
             self.addInstr()
 
     def generateMemDir(self):
-        return randrange(8)
+        return random.binomial(n=7, p=0.5, size=1)[0]
 
     def generateInstr(self):
-        val = randrange(10)
-        if val < 3:  # instruccion cacl
-            return [InstrType.calc]
-
-        if 3 <= val < 6:  # instruccion read
+        val = random.binomial(n=2, p=0.6, size=1)[0]
+        if val == 0:  # instruccion read
             return [InstrType.read, self.generateMemDir()]
 
-        if 6 <= val:  # instruccion write
-            return [InstrType.write, self.generateMemDir(), randrange(2**16)]
+        elif val == 1:  # instruccion calc
+            return [InstrType.calc]
+
+        else:  # instruccion write
+            data = random.binomial(n=2**16, p=0.5, size=1)[0]
+            return [InstrType.write, self.generateMemDir(), data]
 
     def addInstr(self):
         newInstr = self.generateInstr()

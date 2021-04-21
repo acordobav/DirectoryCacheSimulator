@@ -1,44 +1,22 @@
-from queue import Queue
-from threading import Thread
-
-# Object that signals shutdown
-_sentinel = object()
+from numpy import random
 
 
-# A thread that produces data
-def producer(out_q):
-    while True:
-        # Produce some data
-        data = input("Data: ")
+zero = False
+seven = False
+max = False
 
-        if data == "z":
-            break
+for i in range(0, 1000):
+    x = random.binomial(n=7, p=0.5, size=1)[0]
 
-        out_q.put(data)
+    if x == 0:
+        zero = True
 
-    # Put the sentinel on the queue to indicate completion
-    out_q.put(_sentinel)
+    if x > 7:
+        max = True
 
+    if x == 7:
+        seven = True
 
-# A thread that consumes data
-def consumer(in_q):
-    while True:
-        # Get some data
-        data = in_q.get()
-
-        # Check for termination
-        if data is _sentinel:
-            in_q.put(_sentinel)
-            break
-
-        print(data)
-
-
-# Create the shared queue and launch both threads
-q = Queue()
-t1 = Thread(target=consumer, args=(q, ))
-t2 = Thread(target=producer, args=(q, ))
-t1.start()
-t2.start()
-
-
+print("zero " + str(zero))
+print("seven " + str(seven))
+print("max " + str(max))

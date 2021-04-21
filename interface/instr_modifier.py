@@ -1,4 +1,4 @@
-import random
+from numpy import random
 
 from interface.global_variables import pygame, space_y, screen
 from interface.colors import white, node_background, green
@@ -97,7 +97,7 @@ def click_input(x, y, mode, ex):
 
     # Click en el dato
     if 661 <= y <= 682:
-        instr_modifier[3] += random.randrange(0, 2 ** 16 + 1)
+        instr_modifier[3] = random.binomial(n=2**16, p=0.5, size=1)[0]
 
 
 def add_instr(ex):

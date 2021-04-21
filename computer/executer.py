@@ -73,15 +73,15 @@ class Executer:
 
         # Ejecucion de de los nodos
         self.execute_nodes()
+        # for i in range(0, self.num_processors):
+        #     if i == 3:
+        #     self.nodes[i].exec()
 
         # Ejecucion del directorio
         self.directory.execute()
         self.extract_mem_operations()
 
         self.update_state()
-
-        # for i in range(0, self.num_processors):
-        #     self.nodes[i].exec_state_updates()
 
     def execute_nodes(self):
         self.cond.acquire()
