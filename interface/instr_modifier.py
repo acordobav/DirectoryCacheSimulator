@@ -109,9 +109,8 @@ def add_instr(ex):
     if instr_t == 1:
         instr = [InstrType.read, mem_dir]
     if instr_t == 2:
-        instr = [InstrType.read, mem_dir, data]
+        instr = [InstrType.write, mem_dir, data]
 
     node_id = instr_modifier[0]
 
     ex.nodes[node_id].control.cpu.instr[1] = instr
-    print(instr)

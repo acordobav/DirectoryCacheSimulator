@@ -19,9 +19,6 @@ class Control:
         self.instr = None
 
     def execute(self):
-        # Se atienden las solicitudes de actualizacion de estado
-        self.handle_update()
-
         if not self.waiting:
             # Si el procesador no esta esperando el resultado
             # de una solicitud a L2 se ejecuta una instruccion
@@ -32,6 +29,9 @@ class Control:
             if not self.inQueue.empty():
                 # Se procesa la respuesta
                 self.execRequestResponse()
+
+        # Se atienden las solicitudes de actualizacion de estado
+        self.handle_update()
 
         # if not self.waiting:
             # Se genera una nueva instruccion
