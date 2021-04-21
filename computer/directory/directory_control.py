@@ -38,6 +38,8 @@ class DirectoryControl:
         # de una solicitud a memoria principal
         self.pending_requests = [None for _ in range(num_processors)]
 
+        self.reading_requests = []
+
     def read_memory(self, mem_dir):
         # Se solicita la informacion a memoria principa;
         self.mem_bus[0].put([MemoryOperation.read, mem_dir])
@@ -110,7 +112,8 @@ class DirectoryControl:
 
         # Se verifica que el dato se encuentre en memoria
         if not is_data_available and not requested:
-            self.read_memory(mem_dir)
+            if mem_dir not in self.reading_requests:
+                self.reading_requests.append(mem_dir)
             self.pending_requests[node_id] = [CacheAlert.rdMiss, mem_dir]
             return
 
@@ -198,7 +201,13 @@ class DirectoryControl:
                 replace_action = bus.get()
                 self.remove_reference(replace_action, i)
 
+    def __reading_requests(self):
+        for mem_dir in self.reading_requests:
+            self.read_memory(mem_dir)
+        self.reading_requests = []
+
     def execute(self):
+
         # Se atienden alertas de reemplazo de datos en L1
         self.handle_replace_alerts()
 
@@ -228,3 +237,4 @@ class DirectoryControl:
 
                     else:
                         pass
+        self.__reading_requests()

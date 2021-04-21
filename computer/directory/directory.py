@@ -71,7 +71,8 @@ class Directory:
             # if i != node_id:
             if self.processorRef[index][i] == 1 and i != node_id:
                 # Notificacion
-                self.update_buses[i].put([mem_dir, CoherenceState.invalid])
+                old_mem_dir = self.cache.blockDirMem[index]
+                self.update_buses[i].put([old_mem_dir, CoherenceState.invalid])
                 # Eliminacion de la referencia en el directorio
                 self.processorRef[index][i] = 0
 

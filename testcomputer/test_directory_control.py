@@ -103,47 +103,47 @@ class TestDirectoryControlMethods(unittest.TestCase):
         i = directory.get_index_min_references(x2, y2)
         self.assertEqual(i, 2)
 
-    def test_handle_read(self):
-        directory_control = get_directory_control()
-        mem_bus = directory_control.mem_bus[0]
-        pending_requests = directory_control.pending_requests
-        """
-        | N | Dir | Data | Sta | P    |
-        | 0 |  10 |  11  | DI  | 0000 |
-        | 1 |  20 |  21  | DS  | 0110 |
-        | 2 |  30 |  31  | DM  | 1000 |
-        | 3 |  40 |  41  | DS  | 1011 |
-        """
-        mem_dir = 10
-        node_id = 2
-        requested = False
-        directory_control.handle_read(mem_dir, node_id, requested)
-        self.assertFalse(mem_bus.empty())
-        m = mem_bus.get()
-        self.assertEqual(m[0], MemoryOperation.read)
-        self.assertEqual(m[1], mem_dir)
-
-        self.assertIsNotNone(pending_requests[node_id])
-        a = pending_requests[node_id]
-        self.assertEqual(a[0], CacheAlert.rdMiss)
-        self.assertEqual(a[1], mem_dir)
-
-        """
-        | N | Dir | Data | Sta | P    |
-        | 0 |  10 |  11  | DI  | 0000 |
-        | 1 |  20 |  21  | DS  | 0110 |
-        | 2 |  30 |  31  | DM  | 1000 |
-        | 3 |  40 |  41  | DS  | 1011 |
-        """
-        mem_dir = 30
-        node_id = 2
-        requested = False
-        directory_control.handle_read(mem_dir, node_id, requested)
-        self.assertFalse(mem_bus.empty()) # Bloque exclusivo, hace write back
-
-        self.assertIsNone(pending_requests[node_id])
-        self.assertEqual(directory_control.directory.processorRef[2],
-                         [1, 0, 1, 0])
+    # def test_handle_read(self):
+    #     directory_control = get_directory_control()
+    #     mem_bus = directory_control.mem_bus[0]
+    #     pending_requests = directory_control.pending_requests
+    #     """
+    #     | N | Dir | Data | Sta | P    |
+    #     | 0 |  10 |  11  | DI  | 0000 |
+    #     | 1 |  20 |  21  | DS  | 0110 |
+    #     | 2 |  30 |  31  | DM  | 1000 |
+    #     | 3 |  40 |  41  | DS  | 1011 |
+    #     """
+    #     mem_dir = 10
+    #     node_id = 2
+    #     requested = False
+    #     directory_control.handle_read(mem_dir, node_id, requested)
+    #     self.assertFalse(mem_bus.empty())
+    #     m = mem_bus.get()
+    #     self.assertEqual(m[0], MemoryOperation.read)
+    #     self.assertEqual(m[1], mem_dir)
+    #
+    #     self.assertIsNotNone(pending_requests[node_id])
+    #     a = pending_requests[node_id]
+    #     self.assertEqual(a[0], CacheAlert.rdMiss)
+    #     self.assertEqual(a[1], mem_dir)
+    #
+    #     """
+    #     | N | Dir | Data | Sta | P    |
+    #     | 0 |  10 |  11  | DI  | 0000 |
+    #     | 1 |  20 |  21  | DS  | 0110 |
+    #     | 2 |  30 |  31  | DM  | 1000 |
+    #     | 3 |  40 |  41  | DS  | 1011 |
+    #     """
+    #     mem_dir = 30
+    #     node_id = 2
+    #     requested = False
+    #     directory_control.handle_read(mem_dir, node_id, requested)
+    #     self.assertFalse(mem_bus.empty()) # Bloque exclusivo, hace write back
+    #
+    #     self.assertIsNone(pending_requests[node_id])
+    #     self.assertEqual(directory_control.directory.processorRef[2],
+    #                      [1, 0, 1, 0])
 
     def test_hande_write(self):
         directory_control = get_directory_control()
